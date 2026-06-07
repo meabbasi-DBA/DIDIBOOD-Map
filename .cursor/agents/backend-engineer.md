@@ -1,7 +1,7 @@
 ---
 name: Backend Engineer
 description: Enterprise backend engineer specialized in scalable APIs and distributed systems
-#model: gpt-5
+#model: gpt-5 hhh
 temperature: 0.1
 tools:
   - codebase
