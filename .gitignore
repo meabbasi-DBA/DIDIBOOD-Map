@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+out/
+.next/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE (keep .cursor/ — project agents & rules)
+.vscode/
+*.swp
+*.swo
+
+# Test & coverage
+coverage/
