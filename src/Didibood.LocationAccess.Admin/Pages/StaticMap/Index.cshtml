@@ -1,0 +1,190 @@
+@page
+@model Didibood.LocationAccess.Admin.Pages.StaticMap.IndexModel
+@{
+    ViewData["Title"] = "نقشه استاتیک";
+    ViewData["ActivePage"] = "StaticMap";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4" dir="rtl">
+    <div>
+        <div class="page-title">ویوور نقشه استاتیک</div>
+        <small class="text-muted">تولید و مشاهده تصاویر نقشه استاتیک از سرویس API</small>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Generator Form -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">
+                <i class="bi bi-map me-2 text-primary"></i>تولید نقشه
+            </div>
+            <div class="card-body" dir="rtl">
+                <form method="post" asp-page-handler="Generate">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="lat" class="form-label small fw-semibold">عرض جغرافیایی</label>
+                            <input type="number" class="form-control form-control-sm" id="lat" name="Latitude"
+                                   step="0.000001" min="-90" max="90"
+                                   value="@Model.Latitude" placeholder="35.6892" required />
+                        </div>
+                        <div class="col-6">
+                            <label for="lng" class="form-label small fw-semibold">طول جغرافیایی</label>
+                            <input type="number" class="form-control form-control-sm" id="lng" name="Longitude"
+                                   step="0.000001" min="-180" max="180"
+                                   value="@Model.Longitude" placeholder="51.3890" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="zoom" class="form-label small fw-semibold d-flex justify-content-between">
+                            <span>بزرگ‌نمایی</span>
+                            <span class="badge bg-secondary" id="zoomVal">@Model.Zoom</span>
+                        </label>
+                        <input type="range" class="form-range" id="zoom" name="Zoom"
+                               min="5" max="19" value="@Model.Zoom"
+                               oninput="document.getElementById('zoomVal').textContent=this.value" />
+                        <div class="d-flex justify-content-between text-muted" style="font-size:.7rem">
+                            <span>۵ (کشور)</span><span>۱۲ (شهر)</span><span>۱۹ (خیابان)</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="width" class="form-label small fw-semibold">عرض (px)</label>
+                            <input type="number" class="form-control form-control-sm" id="width" name="Width"
+                                   min="1" max="2048" value="@Model.Width" required />
+                        </div>
+                        <div class="col-6">
+                            <label for="height" class="form-label small fw-semibold">ارتفاع (px)</label>
+                            <input type="number" class="form-control form-control-sm" id="height" name="Height"
+                                   min="1" max="2048" value="@Model.Height" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">استایل نقشه</label>
+                        <div class="d-flex gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="Style" value="light"
+                                       id="styleLight" @(Model.Style == "light" || string.IsNullOrEmpty(Model.Style) ? "checked" : "") />
+                                <label class="form-check-label small" for="styleLight">
+                                    <i class="bi bi-sun me-1"></i>روشن
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="Style" value="dark"
+                                       id="styleDark" @(Model.Style == "dark" ? "checked" : "") />
+                                <label class="form-check-label small" for="styleDark">
+                                    <i class="bi bi-moon me-1"></i>تاریک
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="markerInput" class="form-label small fw-semibold">مارکر (اختیاری)</label>
+                        <input type="text" class="form-control form-control-sm" id="markerInput" name="Marker"
+                               value="@Model.Marker" placeholder="red | green | blue" />
+                        <div class="form-text">مارکر اختیاری — red، green یا blue</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-image me-2"></i>تولید نقشه
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Preview -->
+    <div class="col-lg-8">
+        @if (!string.IsNullOrEmpty(Model.GeneratedImageUrl))
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold" dir="rtl">
+                        <i class="bi bi-check-circle text-success me-2"></i>نقشه تولید شد
+                    </span>
+                    <a href="@Model.GeneratedImageUrl" download class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-download me-1"></i>دانلود
+                    </a>
+                </div>
+                <div class="card-body p-2 text-center bg-light">
+                    <img src="@Model.GeneratedImageUrl"
+                         alt="Static Map"
+                         class="img-fluid rounded"
+                         style="max-height:400px;object-fit:contain" />
+                </div>
+                <div class="card-footer text-muted small" dir="rtl">
+                    URL: <code>@Model.GeneratedImageUrl</code>
+                </div>
+            </div>
+        }
+        else if (Model.GenerateError != null)
+        {
+            <div class="alert alert-danger" dir="rtl">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>خطا در تولید نقشه:</strong> @Model.GenerateError
+            </div>
+        }
+
+        <!-- Recent Cache -->
+        <div class="card">
+            <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center" dir="rtl">
+                <span><i class="bi bi-clock-history me-2 text-muted"></i>تاریخچه کش اخیر</span>
+                <span class="badge bg-secondary">@Model.RecentSnapshots.Count مورد</span>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentSnapshots.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 align-middle" style="font-size:.85rem">
+                            <thead>
+                                <tr>
+                                    <th dir="rtl">مختصات</th>
+                                    <th>Zoom</th>
+                                    <th>Style</th>
+                                    <th dir="rtl">تاریخ</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var snap in Model.RecentSnapshots)
+                                {
+                                    <tr>
+                                        <td class="font-monospace small">
+                                            @snap.Latitude.ToString("F4"), @snap.Longitude.ToString("F4")
+                                        </td>
+                                        <td class="small">@snap.Zoom</td>
+                                        <td class="small">
+                                            <span class="badge bg-light text-dark border">@(snap.Style ?? "default")</span>
+                                        </td>
+                                        <td class="small text-muted text-nowrap" dir="rtl">
+                                            @snap.CreatedAt.ToString("MM-dd HH:mm")
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(snap.ImageUrl))
+                                            {
+                                                <a href="@snap.ImageUrl" target="_blank" class="btn btn-xs btn-outline-secondary" style="font-size:.72rem;padding:.15rem .4rem">
+                                                    <i class="bi bi-box-arrow-up-right"></i>
+                                                </a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4" dir="rtl">
+                        <i class="bi bi-images fs-2 d-block mb-2"></i>
+                        هنوز هیچ نقشه‌ای تولید نشده
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

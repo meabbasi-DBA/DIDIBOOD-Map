@@ -1,0 +1,90 @@
+@page
+@model Didibood.LocationAccess.Admin.Pages.Config.IndexModel
+@{
+    ViewData["Title"] = "پیکربندی سیستم";
+    ViewData["ActivePage"] = "Config";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4" dir="rtl">
+    <div>
+        <div class="page-title">پیکربندی سیستم</div>
+        <small class="text-muted">مدیریت تنظیمات سیستم — هر ردیف را جداگانه ذخیره کنید</small>
+    </div>
+    <span class="badge bg-secondary">@Model.Configs.Count کلید</span>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:28%">کلید</th>
+                        <th style="width:32%">مقدار</th>
+                        <th style="width:12%">نوع</th>
+                        <th>توضیح</th>
+                        <th class="text-center" style="width:90px">ذخیره</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cfg in Model.Configs)
+                    {
+                        <tr>
+                            <td>
+                                <code class="small fw-semibold">@cfg.ConfigKey</code>
+                            </td>
+                            <td>
+                                <form method="post" asp-page-handler="Save" class="d-flex gap-1">
+                                    <input type="hidden" name="configKey" value="@cfg.ConfigKey" />
+                                    @if (cfg.ValueType == "bool")
+                                    {
+                                        <select name="configValue" class="form-select form-select-sm">
+                                            <option value="true" selected="@(cfg.ConfigValue.Equals("true", StringComparison.OrdinalIgnoreCase))">true</option>
+                                            <option value="false" selected="@(cfg.ConfigValue.Equals("false", StringComparison.OrdinalIgnoreCase))">false</option>
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <input type="@(cfg.ConfigKey.Contains("password", StringComparison.OrdinalIgnoreCase) || cfg.ConfigKey.Contains("secret", StringComparison.OrdinalIgnoreCase) ? "password" : "text")"
+                                               class="form-control form-control-sm font-monospace"
+                                               name="configValue"
+                                               value="@cfg.ConfigValue" />
+                                    }
+                                    <button type="submit" class="btn btn-sm btn-primary flex-shrink-0" title="ذخیره این مقدار">
+                                        <i class="bi bi-save"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">@cfg.ValueType</span>
+                            </td>
+                            <td class="small text-muted" dir="rtl">
+                                @cfg.Description
+                                @if (cfg.UpdatedAt != default)
+                                {
+                                    <br />
+                                    <span class="text-muted" style="font-size:.72rem">
+                                        آخرین تغییر: @cfg.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+                                        @(!string.IsNullOrEmpty(cfg.UpdatedBy) ? $" توسط {cfg.UpdatedBy}" : "")
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center text-muted small">
+                                <!-- submit is inline above -->
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Configs.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5" dir="rtl">
+                                <i class="bi bi-gear fs-1 d-block mb-2"></i>
+                                هیچ پیکربندی‌ای در جدول system_configuration موجود نیست
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,17 @@
+# Docker-only build pipeline — no host dotnet restore required
+# Usage: docker compose -f docker-compose.build.yml build
+
+services:
+  solution-build:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.build
+      target: build
+    image: didibood-locationaccess:build
+
+  solution-test:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.build
+      target: test
+    image: didibood-locationaccess:test

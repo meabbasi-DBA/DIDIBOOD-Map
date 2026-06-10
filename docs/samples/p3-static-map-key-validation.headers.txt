@@ -1,0 +1,18 @@
+HTTP/1.1 485 
+Date: Mon, 08 Jun 2026 11:37:18 GMT
+Content-Type: application/json
+Content-Length: 69
+Connection: keep-alive
+access-control-allow-methods: POST, GET, OPTIONS, DELETE, PUT
+access-control-max-age: 3600
+access-control-allow-headers: cacheid, api-key, Accept, Api-Key, apiKey, cacheId, Access-Control-Allow-Headers, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With
+access-control-expose-headers: *
+access-control-allow-origin: *
+trace-id: 7e53a15c-42e6-466a-bcf5-8cc284b4e8cb
+Strict-Transport-Security: max-age=31536000
+X-ZRK-US: 485
+X-ZRK-CS: BYPASS
+Server: Sotoon CDN
+X-ZRK-SN: 4003
+Accept-Ranges: bytes
+

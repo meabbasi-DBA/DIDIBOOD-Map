@@ -1,0 +1,8 @@
+{
+  "name": "didibood-location-access-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "neshan:search": "node scripts/neshan-search.mjs"
+  }
+}

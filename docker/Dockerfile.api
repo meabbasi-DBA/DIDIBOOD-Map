@@ -1,0 +1,33 @@
+# API runtime image — restore/build runs inside container network stack
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY nuget.config Directory.Build.props Didibood.LocationAccess.sln ./
+
+COPY src/Didibood.LocationAccess.Domain/Didibood.LocationAccess.Domain.csproj \
+     src/Didibood.LocationAccess.Domain/
+COPY src/Didibood.LocationAccess.Application/Didibood.LocationAccess.Application.csproj \
+     src/Didibood.LocationAccess.Application/
+COPY src/Didibood.LocationAccess.Infrastructure/Didibood.LocationAccess.Infrastructure.csproj \
+     src/Didibood.LocationAccess.Infrastructure/
+COPY src/Didibood.LocationAccess.API/Didibood.LocationAccess.API.csproj \
+     src/Didibood.LocationAccess.API/
+
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    NUGET_XMLDOC_MODE=skip
+
+RUN dotnet restore Didibood.LocationAccess.sln --disable-parallel
+
+COPY src/ ./src/
+
+RUN dotnet publish src/Didibood.LocationAccess.API/Didibood.LocationAccess.API.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Didibood.LocationAccess.API.dll"]

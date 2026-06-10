@@ -1,0 +1,77 @@
+# =============================================================================
+# Didibood.LocationAccess — Docker build (restore + build + test)
+# Bypasses host NuGet/network issues by running entirely inside the container.
+#
+# Build:  docker build -f docker/Dockerfile.build --target build .
+# Test:   docker build -f docker/Dockerfile.build --target test .
+# Shell:  docker build -f docker/Dockerfile.build --target dev .
+# =============================================================================
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS restore
+WORKDIR /src
+
+# NuGet config + solution metadata (cache-friendly layer)
+COPY nuget.config Directory.Build.props Didibood.LocationAccess.sln ./
+
+# Project files only — maximises Docker layer cache on dependency restore
+COPY src/Didibood.LocationAccess.Domain/Didibood.LocationAccess.Domain.csproj \
+     src/Didibood.LocationAccess.Domain/
+COPY src/Didibood.LocationAccess.Application/Didibood.LocationAccess.Application.csproj \
+     src/Didibood.LocationAccess.Application/
+COPY src/Didibood.LocationAccess.Infrastructure/Didibood.LocationAccess.Infrastructure.csproj \
+     src/Didibood.LocationAccess.Infrastructure/
+COPY src/Didibood.LocationAccess.API/Didibood.LocationAccess.API.csproj \
+     src/Didibood.LocationAccess.API/
+COPY src/Didibood.LocationAccess.Admin/Didibood.LocationAccess.Admin.csproj \
+     src/Didibood.LocationAccess.Admin/
+COPY src/Didibood.LocationAccess.Worker/Didibood.LocationAccess.Worker.csproj \
+     src/Didibood.LocationAccess.Worker/
+COPY tests/Didibood.LocationAccess.Tests/Didibood.LocationAccess.Tests.csproj \
+     tests/Didibood.LocationAccess.Tests/
+
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    NUGET_XMLDOC_MODE=skip
+
+RUN dotnet restore Didibood.LocationAccess.sln \
+    --disable-parallel \
+    --verbosity minimal
+
+# ------------------------------------------------------------------------------
+FROM restore AS build
+
+COPY src/ ./src/
+COPY tests/ ./tests/
+
+RUN dotnet build Didibood.LocationAccess.sln \
+    -c Release \
+    --no-restore \
+    --verbosity minimal
+
+# ------------------------------------------------------------------------------
+FROM build AS test
+
+RUN dotnet test Didibood.LocationAccess.sln \
+    -c Release \
+    --no-build \
+    --verbosity normal \
+    --logger "console;verbosity=normal"
+
+# ------------------------------------------------------------------------------
+# Dev shell — mount source for iteration without rebuilding image
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
+WORKDIR /src
+COPY nuget.config Directory.Build.props ./
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+CMD ["bash"]
+
+# ------------------------------------------------------------------------------
+# Export build artifacts to a minimal runtime image (optional CI artifact)
+FROM build AS artifacts
+WORKDIR /artifacts
+RUN dotnet publish src/Didibood.LocationAccess.API/Didibood.LocationAccess.API.csproj \
+        -c Release -o /artifacts/api --no-build /p:UseAppHost=false && \
+    dotnet publish src/Didibood.LocationAccess.Worker/Didibood.LocationAccess.Worker.csproj \
+        -c Release -o /artifacts/worker --no-build /p:UseAppHost=false && \
+    dotnet publish src/Didibood.LocationAccess.Admin/Didibood.LocationAccess.Admin.csproj \
+        -c Release -o /artifacts/admin --no-build /p:UseAppHost=false

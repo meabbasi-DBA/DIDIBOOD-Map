@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: didibood-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Mehdi@55285}
+      POSTGRES_DB: DiDiboodMapDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d DiDiboodMapDB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: didibood-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=DiDiboodMapDB;Username=postgres;Password=${POSTGRES_PASSWORD:-Mehdi@55285}
+      Neshan__ApiKey: ${NESHAN_API_KEY}
+      Neshan__LocationApiKey: ${NESHAN_LOCATION_API_KEY:-${NESHAN_API_KEY}}
+    ports:
+      - "5080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: didibood-worker
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=DiDiboodMapDB;Username=postgres;Password=${POSTGRES_PASSWORD:-Mehdi@55285}
+      Neshan__ApiKey: ${NESHAN_API_KEY}
+      Neshan__LocationApiKey: ${NESHAN_LOCATION_API_KEY:-${NESHAN_API_KEY}}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.admin
+    container_name: didibood-admin
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=DiDiboodMapDB;Username=postgres;Password=${POSTGRES_PASSWORD:-Mehdi@55285}
+      Neshan__ApiKey: ${NESHAN_API_KEY}
+      Neshan__LocationApiKey: ${NESHAN_LOCATION_API_KEY:-${NESHAN_API_KEY}}
+      Neshan__WebMapKey: ${NESHAN_WEB_MAP_KEY:-${NESHAN_API_KEY}}
+      ApiSettings__BaseUrl: http://api:8080
+    ports:
+      - "5081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

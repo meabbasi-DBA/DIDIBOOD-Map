@@ -1,0 +1,85 @@
+@page
+@model Didibood.LocationAccess.Admin.Pages.DataQuality.IndexModel
+@{
+    ViewData["Title"] = "کیفیت داده";
+    ViewData["ActivePage"] = "DataQuality";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4" dir="rtl">
+    <div>
+        <div class="page-title">کیفیت داده</div>
+        <small class="text-muted">مقایسه نتایج زنده Neshan با داده‌های ذخیره‌شده در پایگاه داده</small>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">
+                <i class="bi bi-search me-2 text-primary"></i>پارامترهای مقایسه
+            </div>
+            <div class="card-body" dir="rtl">
+                <form method="post" asp-page-handler="Compare">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">عرض جغرافیایی</label>
+                            <input asp-for="Latitude" class="form-control form-control-sm" step="0.000001" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">طول جغرافیایی</label>
+                            <input asp-for="Longitude" class="form-control form-control-sm" step="0.000001" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">عبارت جستجو</label>
+                        <input asp-for="SearchTerm" class="form-control form-control-sm" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">شعاع (متر)</label>
+                        <input asp-for="RadiusMeters" type="number" class="form-control form-control-sm" min="100" max="10000" />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-arrow-left-right me-1"></i>مقایسه
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger" dir="rtl">@Model.ErrorMessage</div>
+        }
+
+        @if (Model.Result is not null)
+        {
+            <div class="row g-2 mb-3" dir="rtl">
+                <div class="col-md-3"><div class="card p-2 text-center"><div class="small text-muted">زنده</div><div class="fw-bold">@Model.Result.LiveCount</div></div></div>
+                <div class="col-md-3"><div class="card p-2 text-center"><div class="small text-muted">پایگاه داده</div><div class="fw-bold">@Model.Result.DbCount</div></div></div>
+                <div class="col-md-3"><div class="card p-2 text-center"><div class="small text-muted">تطابق</div><div class="fw-bold text-success">@Model.Result.MatchedCount</div></div></div>
+                <div class="col-md-3"><div class="card p-2 text-center"><div class="small text-muted">اختلاف</div><div class="fw-bold text-danger">@(Model.Result.LiveOnlyCount + Model.Result.DbOnlyCount)</div></div></div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-transparent fw-semibold" dir="rtl">اختلاف‌ها</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>نوع</th><th>عنوان</th><th>آدرس</th><th>اثر انگشت</th></tr></thead>
+                        <tbody>
+                        @foreach (var row in Model.Result.Mismatches.Take(50))
+                        {
+                            <tr>
+                                <td><span class="badge @(row.Kind == "live-only" ? "bg-warning text-dark" : "bg-info")">@row.Kind</span></td>
+                                <td>@row.Title</td>
+                                <td class="small text-muted">@row.Address</td>
+                                <td class="font-monospace small">@(row.Fingerprint is { Length: > 0 } fp ? fp[..Math.Min(12, fp.Length)] + "..." : "")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

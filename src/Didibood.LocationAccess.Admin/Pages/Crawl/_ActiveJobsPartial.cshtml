@@ -1,0 +1,66 @@
+@model List<Didibood.LocationAccess.Admin.Pages.Crawl.ActiveExecutionViewModel>
+@{
+    Layout = null;
+}
+@if (Model == null || !Model.Any())
+{
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-check2-circle fs-1 d-block mb-2 text-success"></i>
+        <span dir="rtl">هیچ کار فعالی در حال اجرا نیست</span>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>نام کار</th>
+                    <th>شروع</th>
+                    <th>مدت</th>
+                    <th>درخواست</th>
+                    <th>جدید</th>
+                    <th>بروز</th>
+                    <th>خطا</th>
+                    <th>سلول</th>
+                    <th>وضعیت</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model)
+                {
+                    var duration = DateTimeOffset.UtcNow - e.StartedAt;
+                    <tr>
+                        <td class="fw-semibold small">@e.JobName</td>
+                        <td class="small text-muted">@e.StartedAt.ToString("HH:mm:ss")</td>
+                        <td class="small">
+                            @if (duration.TotalHours >= 1)
+                            {
+                                <span>@((int)duration.TotalHours)h @duration.Minutes&#x202F;m</span>
+                            }
+                            else if (duration.TotalMinutes >= 1)
+                            {
+                                <span>@((int)duration.TotalMinutes)m @duration.Seconds&#x202F;s</span>
+                            }
+                            else
+                            {
+                                <span>@duration.Seconds&#x202F;s</span>
+                            }
+                        </td>
+                        <td class="small">@e.RequestCount</td>
+                        <td class="small text-success">@e.NewRecords</td>
+                        <td class="small text-warning">@e.UpdatedRecords</td>
+                        <td class="small text-danger">@e.FailedRecords</td>
+                        <td class="small">@e.CellsProcessed</td>
+                        <td>
+                            <span class="badge badge-running d-flex align-items-center gap-1" style="width:fit-content">
+                                <span class="spinner-grow spinner-grow-sm" role="status" style="width:.4rem;height:.4rem"></span>
+                                در حال اجرا
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

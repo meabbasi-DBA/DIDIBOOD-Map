@@ -1,0 +1,50 @@
+@page
+@model Didibood.LocationAccess.Admin.Pages.Jobs.JobsPartialModel
+@{
+    Layout = null;
+}
+@foreach (var row in Model.Executions)
+{
+    var statusClass = row.Status switch
+    {
+        "running"   => "table-primary",
+        "failed"    => "table-danger",
+        "cancelled" => "table-secondary",
+        _           => ""
+    };
+    <tr class="@statusClass">
+        <td class="fw-semibold small">@row.JobName</td>
+        <td class="small text-muted">@row.TriggeredBy</td>
+        <td>
+            <span class="badge badge-@row.Status" style="font-size:.75rem">@row.Status</span>
+        </td>
+        <td class="small text-muted text-nowrap">@row.StartedAt.ToString("MM-dd HH:mm")</td>
+        <td class="small text-nowrap">
+            @if (row.DurationMs.HasValue)
+            {
+                var ts = TimeSpan.FromMilliseconds(row.DurationMs.Value);
+                @($"{(int)ts.TotalMinutes}m {ts.Seconds}s")
+            }
+            else if (row.Status == "running")
+            {
+                var el = DateTimeOffset.UtcNow - row.StartedAt;
+                <span class="text-primary">@((int)el.TotalMinutes)m @el.Seconds&#x202F;s</span>
+            }
+            else
+            {
+                <span>—</span>
+            }
+        </td>
+        <td class="text-center small">@row.RequestCount</td>
+        <td class="text-center small text-success">@row.NewRecords</td>
+        <td class="text-center small text-warning">@row.UpdatedRecords</td>
+        <td class="text-center small text-danger">@row.FailedRecords</td>
+        <td class="text-center small">@row.CellsProcessed</td>
+    </tr>
+}
+@if (!Model.Executions.Any())
+{
+    <tr>
+        <td colspan="10" class="text-center text-muted py-3" dir="rtl">هیچ اجرایی یافت نشد</td>
+    </tr>
+}

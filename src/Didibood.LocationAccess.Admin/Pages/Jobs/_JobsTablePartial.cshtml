@@ -1,0 +1,103 @@
+@model Didibood.LocationAccess.Admin.Pages.Jobs.IndexModel
+@{
+    Layout = null;
+}
+<div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle" style="font-size:.88rem">
+        <thead>
+            <tr>
+                <th>نام کار</th>
+                <th>توسط</th>
+                <th>وضعیت</th>
+                <th>شروع</th>
+                <th>مدت</th>
+                <th class="text-center">درخواست</th>
+                <th class="text-center text-success">جدید</th>
+                <th class="text-center text-warning">بروز</th>
+                <th class="text-center text-danger">خطا</th>
+                <th class="text-center">سلول‌ها</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Executions)
+            {
+                <tr class="@(row.Status == "running" ? "table-primary" : "")">
+                    <td>
+                        <div class="fw-semibold">@row.JobName</div>
+                        @if (!string.IsNullOrEmpty(row.ErrorSummary))
+                        {
+                            <small class="text-danger" title="@row.ErrorSummary">
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                                @(row.ErrorSummary.Length > 40 ? row.ErrorSummary[..40] + "…" : row.ErrorSummary)
+                            </small>
+                        }
+                    </td>
+                    <td class="small text-muted">@row.TriggeredBy</td>
+                    <td>
+                        <span class="badge badge-@row.Status d-flex align-items-center gap-1" style="width:fit-content">
+                            @if (row.Status == "running")
+                            {
+                                <span class="spinner-grow spinner-grow-sm" role="status" style="width:.4rem;height:.4rem"></span>
+                            }
+                            @row.Status
+                        </span>
+                    </td>
+                    <td class="small text-muted text-nowrap">
+                        @row.StartedAt.ToString("MM-dd HH:mm")
+                    </td>
+                    <td class="small text-nowrap">
+                        @if (row.DurationMs.HasValue)
+                        {
+                            var ts = TimeSpan.FromMilliseconds(row.DurationMs.Value);
+                            if (ts.TotalHours >= 1)
+                            {
+                                <span>@((int)ts.TotalHours)h @ts.Minutes&#x202F;m</span>
+                            }
+                            else if (ts.TotalMinutes >= 1)
+                            {
+                                <span>@((int)ts.TotalMinutes)m @ts.Seconds&#x202F;s</span>
+                            }
+                            else
+                            {
+                                <span>@ts.Seconds&#x202F;s</span>
+                            }
+                        }
+                        else if (row.Status == "running")
+                        {
+                            var elapsed = DateTimeOffset.UtcNow - row.StartedAt;
+                            <span class="text-primary">@((int)elapsed.TotalMinutes)m @elapsed.Seconds&#x202F;s</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td class="text-center">@row.RequestCount</td>
+                    <td class="text-center text-success fw-semibold">@row.NewRecords</td>
+                    <td class="text-center text-warning fw-semibold">@row.UpdatedRecords</td>
+                    <td class="text-center text-danger">@row.FailedRecords</td>
+                    <td class="text-center small text-muted">
+                        @row.CellsProcessed / @(row.CellsProcessed + row.CellsFailed)
+                    </td>
+                </tr>
+            }
+            @if (!Model.Executions.Any())
+            {
+                <tr>
+                    <td colspan="10" class="text-center text-muted py-5" dir="rtl">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        هیچ اجرایی ثبت نشده
+                        @if (!string.IsNullOrEmpty(Model.StatusFilter))
+                        {
+                            <span>با وضعیت «@Model.StatusFilter»</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<div class="px-3 py-2 text-muted small border-top d-flex justify-content-between" dir="rtl">
+    <span>@Model.TotalCount رکورد</span>
+    <span>صفحه @Model.CurrentPage از @Model.TotalPages</span>
+</div>

@@ -1,0 +1,10 @@
+{
+  "request": "GET https://api.neshan.org/v1/search?term=restaurant&lat=35.6892&lng=51.3890&Api-Key=service.4b8e68ce91224ce691fad00b6133b2a5",
+  "auth_method": "query_string_Api-Key",
+  "tested_at": "2026-06-08",
+  "response": {
+    "status": "ERROR",
+    "code": 480,
+    "message": "API Key not found or is not valid."
+  }
+}

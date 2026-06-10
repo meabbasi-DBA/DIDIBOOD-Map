@@ -1,0 +1,842 @@
+﻿[
+    {
+        "request_index":  1,
+        "http_code":  200,
+        "ratelimit_remaining":  59,
+        "headers_file":  "docs/samples/p3-rate-limit-1.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-1.json"
+    },
+    {
+        "request_index":  2,
+        "http_code":  200,
+        "ratelimit_remaining":  58,
+        "headers_file":  "docs/samples/p3-rate-limit-2.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-2.json"
+    },
+    {
+        "request_index":  3,
+        "http_code":  200,
+        "ratelimit_remaining":  57,
+        "headers_file":  "docs/samples/p3-rate-limit-3.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-3.json"
+    },
+    {
+        "request_index":  4,
+        "http_code":  200,
+        "ratelimit_remaining":  56,
+        "headers_file":  "docs/samples/p3-rate-limit-4.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-4.json"
+    },
+    {
+        "request_index":  5,
+        "http_code":  200,
+        "ratelimit_remaining":  55,
+        "headers_file":  "docs/samples/p3-rate-limit-5.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-5.json"
+    },
+    {
+        "request_index":  6,
+        "http_code":  200,
+        "ratelimit_remaining":  54,
+        "headers_file":  "docs/samples/p3-rate-limit-6.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-6.json"
+    },
+    {
+        "request_index":  7,
+        "http_code":  200,
+        "ratelimit_remaining":  53,
+        "headers_file":  "docs/samples/p3-rate-limit-7.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-7.json"
+    },
+    {
+        "request_index":  8,
+        "http_code":  200,
+        "ratelimit_remaining":  52,
+        "headers_file":  "docs/samples/p3-rate-limit-8.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-8.json"
+    },
+    {
+        "request_index":  9,
+        "http_code":  200,
+        "ratelimit_remaining":  51,
+        "headers_file":  "docs/samples/p3-rate-limit-9.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-9.json"
+    },
+    {
+        "request_index":  10,
+        "http_code":  200,
+        "ratelimit_remaining":  50,
+        "headers_file":  "docs/samples/p3-rate-limit-10.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-10.json"
+    },
+    {
+        "request_index":  11,
+        "http_code":  200,
+        "ratelimit_remaining":  49,
+        "headers_file":  "docs/samples/p3-rate-limit-11.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-11.json"
+    },
+    {
+        "request_index":  12,
+        "http_code":  200,
+        "ratelimit_remaining":  48,
+        "headers_file":  "docs/samples/p3-rate-limit-12.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-12.json"
+    },
+    {
+        "request_index":  13,
+        "http_code":  200,
+        "ratelimit_remaining":  47,
+        "headers_file":  "docs/samples/p3-rate-limit-13.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-13.json"
+    },
+    {
+        "request_index":  14,
+        "http_code":  200,
+        "ratelimit_remaining":  46,
+        "headers_file":  "docs/samples/p3-rate-limit-14.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-14.json"
+    },
+    {
+        "request_index":  15,
+        "http_code":  200,
+        "ratelimit_remaining":  45,
+        "headers_file":  "docs/samples/p3-rate-limit-15.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-15.json"
+    },
+    {
+        "request_index":  16,
+        "http_code":  200,
+        "ratelimit_remaining":  44,
+        "headers_file":  "docs/samples/p3-rate-limit-16.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-16.json"
+    },
+    {
+        "request_index":  17,
+        "http_code":  200,
+        "ratelimit_remaining":  43,
+        "headers_file":  "docs/samples/p3-rate-limit-17.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-17.json"
+    },
+    {
+        "request_index":  18,
+        "http_code":  200,
+        "ratelimit_remaining":  42,
+        "headers_file":  "docs/samples/p3-rate-limit-18.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-18.json"
+    },
+    {
+        "request_index":  19,
+        "http_code":  200,
+        "ratelimit_remaining":  41,
+        "headers_file":  "docs/samples/p3-rate-limit-19.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-19.json"
+    },
+    {
+        "request_index":  20,
+        "http_code":  200,
+        "ratelimit_remaining":  40,
+        "headers_file":  "docs/samples/p3-rate-limit-20.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-20.json"
+    },
+    {
+        "request_index":  21,
+        "http_code":  200,
+        "ratelimit_remaining":  39,
+        "headers_file":  "docs/samples/p3-rate-limit-21.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-21.json"
+    },
+    {
+        "request_index":  22,
+        "http_code":  200,
+        "ratelimit_remaining":  38,
+        "headers_file":  "docs/samples/p3-rate-limit-22.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-22.json"
+    },
+    {
+        "request_index":  23,
+        "http_code":  200,
+        "ratelimit_remaining":  37,
+        "headers_file":  "docs/samples/p3-rate-limit-23.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-23.json"
+    },
+    {
+        "request_index":  24,
+        "http_code":  200,
+        "ratelimit_remaining":  36,
+        "headers_file":  "docs/samples/p3-rate-limit-24.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-24.json"
+    },
+    {
+        "request_index":  25,
+        "http_code":  200,
+        "ratelimit_remaining":  35,
+        "headers_file":  "docs/samples/p3-rate-limit-25.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-25.json"
+    },
+    {
+        "request_index":  26,
+        "http_code":  200,
+        "ratelimit_remaining":  34,
+        "headers_file":  "docs/samples/p3-rate-limit-26.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-26.json"
+    },
+    {
+        "request_index":  27,
+        "http_code":  200,
+        "ratelimit_remaining":  33,
+        "headers_file":  "docs/samples/p3-rate-limit-27.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-27.json"
+    },
+    {
+        "request_index":  28,
+        "http_code":  200,
+        "ratelimit_remaining":  32,
+        "headers_file":  "docs/samples/p3-rate-limit-28.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-28.json"
+    },
+    {
+        "request_index":  29,
+        "http_code":  200,
+        "ratelimit_remaining":  31,
+        "headers_file":  "docs/samples/p3-rate-limit-29.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-29.json"
+    },
+    {
+        "request_index":  30,
+        "http_code":  200,
+        "ratelimit_remaining":  30,
+        "headers_file":  "docs/samples/p3-rate-limit-30.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-30.json"
+    },
+    {
+        "request_index":  31,
+        "http_code":  200,
+        "ratelimit_remaining":  29,
+        "headers_file":  "docs/samples/p3-rate-limit-31.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-31.json"
+    },
+    {
+        "request_index":  32,
+        "http_code":  200,
+        "ratelimit_remaining":  28,
+        "headers_file":  "docs/samples/p3-rate-limit-32.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-32.json"
+    },
+    {
+        "request_index":  33,
+        "http_code":  200,
+        "ratelimit_remaining":  27,
+        "headers_file":  "docs/samples/p3-rate-limit-33.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-33.json"
+    },
+    {
+        "request_index":  34,
+        "http_code":  200,
+        "ratelimit_remaining":  26,
+        "headers_file":  "docs/samples/p3-rate-limit-34.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-34.json"
+    },
+    {
+        "request_index":  35,
+        "http_code":  200,
+        "ratelimit_remaining":  25,
+        "headers_file":  "docs/samples/p3-rate-limit-35.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-35.json"
+    },
+    {
+        "request_index":  36,
+        "http_code":  200,
+        "ratelimit_remaining":  24,
+        "headers_file":  "docs/samples/p3-rate-limit-36.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-36.json"
+    },
+    {
+        "request_index":  37,
+        "http_code":  200,
+        "ratelimit_remaining":  23,
+        "headers_file":  "docs/samples/p3-rate-limit-37.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-37.json"
+    },
+    {
+        "request_index":  38,
+        "http_code":  200,
+        "ratelimit_remaining":  22,
+        "headers_file":  "docs/samples/p3-rate-limit-38.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-38.json"
+    },
+    {
+        "request_index":  39,
+        "http_code":  200,
+        "ratelimit_remaining":  21,
+        "headers_file":  "docs/samples/p3-rate-limit-39.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-39.json"
+    },
+    {
+        "request_index":  40,
+        "http_code":  200,
+        "ratelimit_remaining":  20,
+        "headers_file":  "docs/samples/p3-rate-limit-40.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-40.json"
+    },
+    {
+        "request_index":  41,
+        "http_code":  200,
+        "ratelimit_remaining":  19,
+        "headers_file":  "docs/samples/p3-rate-limit-41.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-41.json"
+    },
+    {
+        "request_index":  42,
+        "http_code":  200,
+        "ratelimit_remaining":  18,
+        "headers_file":  "docs/samples/p3-rate-limit-42.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-42.json"
+    },
+    {
+        "request_index":  43,
+        "http_code":  200,
+        "ratelimit_remaining":  17,
+        "headers_file":  "docs/samples/p3-rate-limit-43.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-43.json"
+    },
+    {
+        "request_index":  44,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-44.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-44.json"
+    },
+    {
+        "request_index":  45,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-45.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-45.json"
+    },
+    {
+        "request_index":  46,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-46.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-46.json"
+    },
+    {
+        "request_index":  47,
+        "http_code":  200,
+        "ratelimit_remaining":  13,
+        "headers_file":  "docs/samples/p3-rate-limit-47.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-47.json"
+    },
+    {
+        "request_index":  48,
+        "http_code":  200,
+        "ratelimit_remaining":  13,
+        "headers_file":  "docs/samples/p3-rate-limit-48.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-48.json"
+    },
+    {
+        "request_index":  49,
+        "http_code":  200,
+        "ratelimit_remaining":  13,
+        "headers_file":  "docs/samples/p3-rate-limit-49.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-49.json"
+    },
+    {
+        "request_index":  50,
+        "http_code":  200,
+        "ratelimit_remaining":  13,
+        "headers_file":  "docs/samples/p3-rate-limit-50.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-50.json"
+    },
+    {
+        "request_index":  51,
+        "http_code":  200,
+        "ratelimit_remaining":  17,
+        "headers_file":  "docs/samples/p3-rate-limit-51.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-51.json"
+    },
+    {
+        "request_index":  52,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-52.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-52.json"
+    },
+    {
+        "request_index":  53,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-53.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-53.json"
+    },
+    {
+        "request_index":  54,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-54.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-54.json"
+    },
+    {
+        "request_index":  55,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-55.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-55.json"
+    },
+    {
+        "request_index":  56,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-56.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-56.json"
+    },
+    {
+        "request_index":  57,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-57.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-57.json"
+    },
+    {
+        "request_index":  58,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-58.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-58.json"
+    },
+    {
+        "request_index":  59,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-59.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-59.json"
+    },
+    {
+        "request_index":  60,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-60.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-60.json"
+    },
+    {
+        "request_index":  61,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-61.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-61.json"
+    },
+    {
+        "request_index":  62,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-62.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-62.json"
+    },
+    {
+        "request_index":  63,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-63.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-63.json"
+    },
+    {
+        "request_index":  64,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-64.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-64.json"
+    },
+    {
+        "request_index":  65,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-65.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-65.json"
+    },
+    {
+        "request_index":  66,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-66.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-66.json"
+    },
+    {
+        "request_index":  67,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-67.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-67.json"
+    },
+    {
+        "request_index":  68,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-68.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-68.json"
+    },
+    {
+        "request_index":  69,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-69.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-69.json"
+    },
+    {
+        "request_index":  70,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-70.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-70.json"
+    },
+    {
+        "request_index":  71,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-71.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-71.json"
+    },
+    {
+        "request_index":  72,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-72.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-72.json"
+    },
+    {
+        "request_index":  73,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-73.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-73.json"
+    },
+    {
+        "request_index":  74,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-74.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-74.json"
+    },
+    {
+        "request_index":  75,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-75.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-75.json"
+    },
+    {
+        "request_index":  76,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-76.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-76.json"
+    },
+    {
+        "request_index":  77,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-77.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-77.json"
+    },
+    {
+        "request_index":  78,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-78.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-78.json"
+    },
+    {
+        "request_index":  79,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-79.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-79.json"
+    },
+    {
+        "request_index":  80,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-80.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-80.json"
+    },
+    {
+        "request_index":  81,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-81.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-81.json"
+    },
+    {
+        "request_index":  82,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-82.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-82.json"
+    },
+    {
+        "request_index":  83,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-83.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-83.json"
+    },
+    {
+        "request_index":  84,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-84.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-84.json"
+    },
+    {
+        "request_index":  85,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-85.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-85.json"
+    },
+    {
+        "request_index":  86,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-86.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-86.json"
+    },
+    {
+        "request_index":  87,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-87.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-87.json"
+    },
+    {
+        "request_index":  88,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-88.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-88.json"
+    },
+    {
+        "request_index":  89,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-89.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-89.json"
+    },
+    {
+        "request_index":  90,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-90.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-90.json"
+    },
+    {
+        "request_index":  91,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-91.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-91.json"
+    },
+    {
+        "request_index":  92,
+        "http_code":  200,
+        "ratelimit_remaining":  16,
+        "headers_file":  "docs/samples/p3-rate-limit-92.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-92.json"
+    },
+    {
+        "request_index":  93,
+        "http_code":  200,
+        "ratelimit_remaining":  15,
+        "headers_file":  "docs/samples/p3-rate-limit-93.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-93.json"
+    },
+    {
+        "request_index":  94,
+        "http_code":  200,
+        "ratelimit_remaining":  14,
+        "headers_file":  "docs/samples/p3-rate-limit-94.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-94.json"
+    },
+    {
+        "request_index":  95,
+        "http_code":  200,
+        "ratelimit_remaining":  13,
+        "headers_file":  "docs/samples/p3-rate-limit-95.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-95.json"
+    },
+    {
+        "request_index":  96,
+        "http_code":  200,
+        "ratelimit_remaining":  12,
+        "headers_file":  "docs/samples/p3-rate-limit-96.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-96.json"
+    },
+    {
+        "request_index":  97,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-97.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-97.json"
+    },
+    {
+        "request_index":  98,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-98.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-98.json"
+    },
+    {
+        "request_index":  99,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-99.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-99.json"
+    },
+    {
+        "request_index":  100,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-100.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-100.json"
+    },
+    {
+        "request_index":  101,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-101.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-101.json"
+    },
+    {
+        "request_index":  102,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-102.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-102.json"
+    },
+    {
+        "request_index":  103,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-103.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-103.json"
+    },
+    {
+        "request_index":  104,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-104.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-104.json"
+    },
+    {
+        "request_index":  105,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-105.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-105.json"
+    },
+    {
+        "request_index":  106,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-106.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-106.json"
+    },
+    {
+        "request_index":  107,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-107.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-107.json"
+    },
+    {
+        "request_index":  108,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-108.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-108.json"
+    },
+    {
+        "request_index":  109,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-109.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-109.json"
+    },
+    {
+        "request_index":  110,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-110.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-110.json"
+    },
+    {
+        "request_index":  111,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-111.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-111.json"
+    },
+    {
+        "request_index":  112,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-112.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-112.json"
+    },
+    {
+        "request_index":  113,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-113.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-113.json"
+    },
+    {
+        "request_index":  114,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-114.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-114.json"
+    },
+    {
+        "request_index":  115,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-115.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-115.json"
+    },
+    {
+        "request_index":  116,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-116.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-116.json"
+    },
+    {
+        "request_index":  117,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-117.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-117.json"
+    },
+    {
+        "request_index":  118,
+        "http_code":  200,
+        "ratelimit_remaining":  10,
+        "headers_file":  "docs/samples/p3-rate-limit-118.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-118.json"
+    },
+    {
+        "request_index":  119,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-119.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-119.json"
+    },
+    {
+        "request_index":  120,
+        "http_code":  200,
+        "ratelimit_remaining":  11,
+        "headers_file":  "docs/samples/p3-rate-limit-120.headers.txt",
+        "body_file":  "docs/samples/p3-rate-limit-120.json"
+    }
+]

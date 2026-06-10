@@ -27,3 +27,14 @@ Thumbs.db
 
 # Test & coverage
 coverage/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+
+# Local secrets (use appsettings.Development.json locally or env vars)
+src/**/appsettings.Development.json

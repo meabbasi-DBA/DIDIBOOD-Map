@@ -1,0 +1,368 @@
+{
+  "generatedAt": "2026-06-08T12:57:53.746Z",
+  "searchKeyValid": true,
+  "searchCount": 30,
+  "fieldAudit": {
+    "topLevelFields": [
+      "address",
+      "category",
+      "location",
+      "neighbourhood",
+      "region",
+      "title",
+      "type"
+    ],
+    "locationFields": [
+      "location.x",
+      "location.y",
+      "location.z"
+    ],
+    "hasStableId": false,
+    "idLikeFields": [],
+    "locationZSample": "NaN"
+  },
+  "categoryMatrix": [
+    {
+      "category": "metro",
+      "term": "ایستگاه مترو",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "train_station",
+        "atm",
+        "entrance",
+        "subway_station",
+        "place_of_worship"
+      ]
+    },
+    {
+      "category": "metro",
+      "term": "مترو",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "atm",
+        "entrance",
+        "subway_station",
+        "place_of_worship"
+      ]
+    },
+    {
+      "category": "brt",
+      "term": "ایستگاه BRT",
+      "count": 1,
+      "tehranRelevant": 0,
+      "sampleTypes": [
+        "transit_station"
+      ]
+    },
+    {
+      "category": "brt",
+      "term": "اتوبوس تندرو",
+      "count": 25,
+      "tehranRelevant": 10,
+      "sampleTypes": [
+        "parking",
+        "bus_station",
+        "local_government_office",
+        "misc"
+      ]
+    },
+    {
+      "category": "bus",
+      "term": "ایستگاه اتوبوس",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "bus_station"
+      ]
+    },
+    {
+      "category": "school",
+      "term": "مدرسه",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "historical",
+        "park",
+        "shopping_mall",
+        "local_government_office",
+        "university"
+      ]
+    },
+    {
+      "category": "school",
+      "term": "دبستان",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "tertiary",
+        "local_government_office",
+        "park",
+        "formal_school"
+      ]
+    },
+    {
+      "category": "school",
+      "term": "دبیرستان",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "university",
+        "formal_school"
+      ]
+    },
+    {
+      "category": "university",
+      "term": "دانشگاه",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "hospital",
+        "shopping_mall",
+        "park",
+        "museum",
+        "university",
+        "local_government_office"
+      ]
+    },
+    {
+      "category": "university",
+      "term": "دانشکده",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "university",
+        "college",
+        "library",
+        "veterinary_care",
+        "school"
+      ]
+    },
+    {
+      "category": "hospital",
+      "term": "بیمارستان",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "hospital"
+      ]
+    },
+    {
+      "category": "clinic",
+      "term": "درمانگاه",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "clinic"
+      ]
+    },
+    {
+      "category": "clinic",
+      "term": "کلینیک",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "clinic"
+      ]
+    },
+    {
+      "category": "pharmacy",
+      "term": "داروخانه",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "pharmacy"
+      ]
+    },
+    {
+      "category": "shoppingCenter",
+      "term": "مرکز خرید",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "shopping_mall"
+      ]
+    },
+    {
+      "category": "shoppingCenter",
+      "term": "مجتمع تجاری",
+      "count": 35,
+      "tehranRelevant": 35,
+      "sampleTypes": [
+        "suburb_landmark",
+        "shopping_mall",
+        "commercial_complex"
+      ]
+    },
+    {
+      "category": "supermarket",
+      "term": "سوپرمارکت",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "supermarket"
+      ]
+    },
+    {
+      "category": "supermarket",
+      "term": "هایپرمارکت",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "supermarket"
+      ]
+    },
+    {
+      "category": "park",
+      "term": "پارک",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "park"
+      ]
+    },
+    {
+      "category": "park",
+      "term": "بوستان",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "park"
+      ]
+    },
+    {
+      "category": "gym",
+      "term": "باشگاه ورزشی",
+      "count": 31,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "gym"
+      ]
+    },
+    {
+      "category": "gym",
+      "term": "سالن ورزشی",
+      "count": 31,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "gym"
+      ]
+    },
+    {
+      "category": "bank",
+      "term": "بانک",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "bank"
+      ]
+    },
+    {
+      "category": "bank",
+      "term": "شعبه بانک",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "bank",
+        "women_clothing_store"
+      ]
+    },
+    {
+      "category": "mosque",
+      "term": "مسجد",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "mosque"
+      ]
+    },
+    {
+      "category": "governmentOffice",
+      "term": "اداره",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "local_government_office"
+      ]
+    },
+    {
+      "category": "governmentOffice",
+      "term": "دفتر پیشخوان",
+      "count": 30,
+      "tehranRelevant": 30,
+      "sampleTypes": [
+        "e_government"
+      ]
+    }
+  ],
+  "fingerprint": {
+    "deterministic": true,
+    "sample": "27f7f97d75042039db4dffd50d0f1ccad9ffc4877635260099a3f7222247f261",
+    "collisionDifferentAddress": true,
+    "vectors": [
+      {
+        "label": "restaurant sample",
+        "fingerprint": "27f7f97d75042039db4dffd50d0f1ccad9ffc4877635260099a3f7222247f261"
+      },
+      {
+        "label": "collision test A",
+        "fingerprint": "3c605b6ec04adcb2cba28f5870a7b06e1468f7b08d9421b275b8d03819438b1c"
+      },
+      {
+        "label": "collision test B",
+        "fingerprint": "14cccf704520a2f5f07d120e7771e0adcd088291b9417959a6ce12326a2d609b"
+      }
+    ]
+  },
+  "staticMap": {
+    "headerAuth": {
+      "status": 500,
+      "contentType": null,
+      "ok": false,
+      "bodyPreview": ""
+    },
+    "queryKeyAuth": {
+      "status": 500,
+      "contentType": null,
+      "ok": false,
+      "bodyPreview": ""
+    }
+  },
+  "rateLimit": {
+    "totalRequests": 25,
+    "durationMs": 17423,
+    "errors482": 0,
+    "lastResults": [
+      {
+        "i": 21,
+        "ms": 447,
+        "ok": true
+      },
+      {
+        "i": 22,
+        "ms": 2665,
+        "ok": true
+      },
+      {
+        "i": 23,
+        "ms": 498,
+        "ok": true
+      },
+      {
+        "i": 24,
+        "ms": 447,
+        "ok": true
+      },
+      {
+        "i": 25,
+        "ms": 452,
+        "ok": true
+      }
+    ],
+    "requestsPerMinuteEstimate": 86
+  },
+  "invalidCoordError": {
+    "message": "lat must be a number between -90 and 90"
+  }
+}

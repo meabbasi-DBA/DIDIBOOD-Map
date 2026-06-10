@@ -1,0 +1,163 @@
+@page
+@model Didibood.LocationAccess.Admin.Pages.Crawl.IndexModel
+@{
+    ViewData["Title"] = "Crawl دستی";
+    ViewData["ActivePage"] = "Crawl";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4" dir="rtl">
+    <div>
+        <div class="page-title">Crawl دستی</div>
+        <small class="text-muted">شروع یا متوقف کردن فرآیند Crawl به صورت دستی</small>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Start Crawl Form -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">
+                <i class="bi bi-play-circle text-success me-2"></i>شروع Crawl جدید
+            </div>
+            <div class="card-body" dir="rtl">
+                <form method="post" asp-page-handler="Start">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">محدوده Crawl</label>
+                        <div class="list-group">
+                            <label class="list-group-item list-group-item-action d-flex gap-2">
+                                <input class="form-check-input flex-shrink-0" type="radio"
+                                       name="CrawlMode" value="full"
+                                       @(Model.CrawlMode == "full" ? "checked" : "") required />
+                                <span>
+                                    <strong>کل تهران</strong>
+                                    <br><small class="text-muted">Crawl همه سلول‌های H3 تهران</small>
+                                </span>
+                            </label>
+                            <label class="list-group-item list-group-item-action d-flex gap-2">
+                                <input class="form-check-input flex-shrink-0" type="radio"
+                                       name="CrawlMode" value="categories"
+                                       @(Model.CrawlMode == "categories" ? "checked" : "") />
+                                <span>
+                                    <strong>دسته‌بندی‌های انتخابی</strong>
+                                    <br><small class="text-muted">فقط دسته‌های انتخاب‌شده زیر</small>
+                                </span>
+                            </label>
+                            <label class="list-group-item list-group-item-action d-flex gap-2">
+                                <input class="form-check-input flex-shrink-0" type="radio"
+                                       name="CrawlMode" value="failed"
+                                       @(Model.CrawlMode == "failed" ? "checked" : "") />
+                                <span>
+                                    <strong>سلول‌های ناموفق</strong>
+                                    <br><small class="text-muted">تلاش مجدد سلول‌های failed/stale</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="categoriesPanel" style="@(Model.CrawlMode == "categories" ? "" : "display:none")">
+                        <label class="form-label fw-semibold">دسته‌بندی‌ها</label>
+                        <div class="border rounded p-2" style="max-height:200px;overflow-y:auto">
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="SelectedCategories" value="@cat.Id"
+                                           id="cat_@cat.Id"
+                                           @(Model.SelectedCategories.Contains(cat.Id) ? "checked" : "") />
+                                    <label class="form-check-label small" for="cat_@cat.Id">
+                                        @cat.NameFa
+                                        <span class="text-muted ms-1">(@cat.Code)</span>
+                                    </label>
+                                </div>
+                            }
+                            @if (!Model.Categories.Any())
+                            {
+                                <small class="text-muted">هیچ دسته‌ای موجود نیست</small>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Crawl Job پایه</label>
+                        <select name="BaseJobId" class="form-select form-select-sm">
+                            <option value="">— انتخاب کنید —</option>
+                            @foreach (var job in Model.AvailableJobs)
+                            {
+                                <option value="@job.Id">@job.Name (@job.JobType)</option>
+                            }
+                        </select>
+                        <div class="form-text">اگر انتخاب نکنید، اولین کار فعال استفاده می‌شود</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-play-fill me-2"></i>شروع Crawl
+                    </button>
+                </form>
+
+                <hr />
+
+                <form method="post" asp-page-handler="Stop">
+                    <button type="submit" class="btn btn-outline-danger w-100"
+                            onclick="return confirm('آیا مطمئن هستید؟ تمام کارهای در حال اجرا لغو می‌شوند.')">
+                        <i class="bi bi-stop-fill me-2"></i>توقف همه کارهای فعال (@Model.RunningCount کار)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Jobs -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header bg-transparent d-flex align-items-center justify-content-between">
+                <span class="fw-semibold" dir="rtl">
+                    <i class="bi bi-activity text-danger me-2"></i>کارهای فعال
+                </span>
+                <span class="badge bg-primary" id="refresh-countdown">بروزرسانی خودکار</span>
+            </div>
+            <div class="card-body p-0">
+                <div id="active-jobs-container">
+                    @await Html.PartialAsync("_ActiveJobsPartial", Model.ActiveExecutions)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Show/hide categories panel based on radio selection
+    document.querySelectorAll('input[name="CrawlMode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.getElementById('categoriesPanel').style.display =
+                radio.value === 'categories' ? '' : 'none';
+        });
+    });
+
+    // Poll active jobs every 5 seconds
+    let seconds = 5;
+    const countdown = document.getElementById('refresh-countdown');
+    const container = document.getElementById('active-jobs-container');
+
+    async function refreshJobs() {
+        try {
+            const resp = await fetch('/Crawl/Index?handler=ActiveJobsPartial', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (resp.ok) {
+                container.innerHTML = await resp.text();
+            }
+        } catch (_) { /* ignore network errors */ }
+        seconds = 5;
+    }
+
+    setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+            refreshJobs();
+        } else {
+            if (countdown) countdown.textContent = `بروزرسانی در ${seconds}s`;
+        }
+    }, 1000);
+</script>
+}
