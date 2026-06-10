@@ -2,14 +2,14 @@ using Didibood.LocationAccess.Application.Abstractions;
 using Didibood.LocationAccess.Application.Crawler;
 using Didibood.LocationAccess.Domain.Entities;
 using Didibood.LocationAccess.Domain.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Didibood.LocationAccess.Infrastructure.Crawler;
 
 public sealed class CrawlExecutionRunner(
     ICrawlPlanner planner,
-    ICrawlExecutor executor,
-    IH3CoverageRepository h3Coverage,
+    IServiceScopeFactory scopeFactory,
     ISystemConfigurationStore configStore,
     ILogger<CrawlExecutionRunner> logger) : ICrawlExecutionRunner
 {
@@ -82,6 +82,10 @@ public sealed class CrawlExecutionRunner(
             await semaphore.WaitAsync(ct);
             try
             {
+                using var scope = scopeFactory.CreateScope();
+                var executor = scope.ServiceProvider.GetRequiredService<ICrawlExecutor>();
+                var h3Coverage = scope.ServiceProvider.GetRequiredService<IH3CoverageRepository>();
+
                 var result = await executor.ExecuteAsync(cell, ct);
 
                 await h3Coverage.RecordCrawlOutcomeAsync(
