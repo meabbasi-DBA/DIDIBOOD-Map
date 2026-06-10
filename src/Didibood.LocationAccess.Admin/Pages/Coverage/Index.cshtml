@@ -1,0 +1,113 @@
+@page
+@model Didibood.LocationAccess.Admin.Pages.Coverage.IndexModel
+@{
+    ViewData["Title"] = "مانیتور پوشش";
+    ViewData["ActivePage"] = "Coverage";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4" dir="rtl">
+    <div>
+        <div class="page-title">مانیتور پوشش H3</div>
+        <small class="text-muted">نمایش وضعیت سلول‌های تهران، فیلتر و پیش‌نمایش نقشه</small>
+    </div>
+    <div id="coverage-summary" class="text-end small text-muted"></div>
+</div>
+
+@if (!Model.HasWebMapKey)
+{
+    <div class="alert alert-warning py-2 small" dir="rtl">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        کلید <strong>نقشه وب نشان</strong> تنظیم نشده است — نقشه با OpenStreetMap نمایش داده می‌شود.
+        مقدار <code>Neshan:WebMapKey</code> را در تنظیمات Admin یا متغیر محیطی <code>Neshan__WebMapKey</code> قرار دهید.
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-3">
+        <div class="card mb-3">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">
+                <i class="bi bi-funnel me-2 text-primary"></i>فیلترها
+            </div>
+            <div class="card-body" dir="rtl">
+                <div class="mb-3">
+                    <label for="filter-status" class="form-label small fw-semibold">وضعیت سلول</label>
+                    <select id="filter-status" class="form-select form-select-sm">
+                        <option value="">همه</option>
+                        <option value="success">موفق</option>
+                        <option value="pending">در انتظار</option>
+                        <option value="failed">ناموفق</option>
+                        <option value="stale">کهنه</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="filter-min-poi" class="form-label small fw-semibold">حداقل POI</label>
+                    <input type="number" id="filter-min-poi" class="form-control form-control-sm" min="0" placeholder="0" />
+                </div>
+                <div class="mb-3">
+                    <label for="filter-max-age" class="form-label small fw-semibold">حداکثر سن (روز)</label>
+                    <input type="number" id="filter-max-age" class="form-control form-control-sm" min="0" placeholder="همه" />
+                </div>
+                <div class="mb-3">
+                    <label for="filter-category" class="form-label small fw-semibold">دسته‌بندی (heatmap)</label>
+                    <select id="filter-category" class="form-select form-select-sm">
+                        <option value="">پوشش کلی</option>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <option value="@cat.Id">@cat.NameFa</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="view-mode" class="form-label small fw-semibold">نمایش</label>
+                    <select id="view-mode" class="form-select form-select-sm">
+                        <option value="cells">سلول‌های H3</option>
+                        <option value="heatmap">Heatmap</option>
+                    </select>
+                </div>
+                <button type="button" id="btn-reload" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-arrow-clockwise me-1"></i>بارگذاری مجدد
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="cell-detail-card" style="display:none">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">
+                <i class="bi bi-info-circle me-2"></i>جزئیات سلول
+            </div>
+            <div class="card-body small" dir="rtl">
+                <div id="cell-detail-body" class="mb-2"></div>
+                <div id="cell-static-map"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="coverage-map"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.css" />
+    <link rel="stylesheet" href="~/css/coverage-monitor.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.js"></script>
+    <script>
+        window.coverageConfig = {
+            apiBase: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApiBaseUrl)),
+            webMapKey: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WebMapKey)),
+            tehranBounds: {
+                minLat: @Model.TehranBounds.MinLat.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                maxLat: @Model.TehranBounds.MaxLat.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                minLng: @Model.TehranBounds.MinLng.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                maxLng: @Model.TehranBounds.MaxLng.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            }
+        };
+    </script>
+    <script src="~/js/coverage-monitor.js" asp-append-version="true"></script>
+}

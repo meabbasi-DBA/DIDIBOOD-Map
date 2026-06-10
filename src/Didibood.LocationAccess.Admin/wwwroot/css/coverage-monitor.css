@@ -1,6 +1,17 @@
 #coverage-map {
     width: 100%;
+    height: 620px;
+    min-height: 420px;
+    position: relative;
     z-index: 1;
+    border-radius: 0.5rem;
+    background: #e9ecef;
+}
+
+#coverage-map .leaflet-container {
+    height: 100%;
+    width: 100%;
+    font-family: inherit;
 }
 
 .coverage-legend {
@@ -19,4 +30,11 @@
     margin-left: 6px;
     border-radius: 2px;
     vertical-align: middle;
+}
+
+.coverage-cell-tooltip {
+    font-size: 12px;
+    line-height: 1.5;
+    direction: rtl;
+    text-align: right;
 }
