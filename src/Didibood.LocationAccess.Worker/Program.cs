@@ -15,6 +15,7 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddHostedService<WorkerHeartbeatService>();
     builder.Services.AddHostedService<CrawlSchedulerService>();
+    builder.Services.AddHostedService<ManualCrawlHostedService>();
 
     var host = builder.Build();
     await host.RunAsync();

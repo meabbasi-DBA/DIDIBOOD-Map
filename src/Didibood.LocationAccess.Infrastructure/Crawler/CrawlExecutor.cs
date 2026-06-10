@@ -32,6 +32,7 @@ public sealed class CrawlExecutor(
         int newRecords = 0;
         int updatedRecords = 0;
         int failedRecords = 0;
+        var skipped = 0;
 
         foreach (var item in response.Items)
         {
@@ -39,7 +40,10 @@ public sealed class CrawlExecutor(
             {
                 var poi = normalizer.Normalize(item, cell.CategoryId);
                 if (poi is null)
+                {
+                    skipped++;
                     continue;
+                }
 
                 var exists = await repository.ExistsByFingerprintAsync(poi.Fingerprint, ct);
                 await repository.UpsertAsync(poi, ct);
@@ -56,6 +60,16 @@ public sealed class CrawlExecutor(
                     "Failed to persist POI '{Title}' for cell H3={H3Index}.",
                     item.Title, cell.H3Index);
             }
+        }
+
+        if (response.Items.Count > 0 && newRecords + updatedRecords == 0)
+        {
+            logger.LogDebug(
+                "Cell H3={H3Index} term={Term}: API returned {ItemCount} items, normalized 0 (skipped {Skipped})",
+                cell.H3Index,
+                cell.SearchTerm,
+                response.Items.Count,
+                skipped);
         }
 
         return new CrawlExecutionResult(

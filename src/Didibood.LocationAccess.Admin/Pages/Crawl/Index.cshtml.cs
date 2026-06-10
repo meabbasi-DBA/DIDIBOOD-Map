@@ -47,15 +47,27 @@ public class IndexModel(AppDbContext db) : PageModel
             job = await db.CrawlJobs.FindAsync(new object[] { BaseJobId.Value }, cancellationToken);
 
         job ??= await db.CrawlJobs
-            .Where(j => j.IsEnabled)
             .OrderBy(j => j.Name)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (job is null)
         {
-            TempData["Error"] = "هیچ Crawl Job فعالی یافت نشد. ابتدا یک کار در بخش زمان‌بندی تعریف کنید.";
+            TempData["Error"] = "هیچ Crawl Job تعریف‌شده‌ای یافت نشد.";
             return RedirectToPage();
         }
+
+        if (CrawlMode == "categories" && SelectedCategories.Count == 0)
+        {
+            TempData["Error"] = "حداقل یک دسته‌بندی را انتخاب کنید.";
+            return RedirectToPage();
+        }
+
+        var triggeredBy = CrawlMode switch
+        {
+            "categories" => $"admin_manual:categories:{string.Join(',', SelectedCategories)}",
+            "failed" => "admin_manual:failed",
+            _ => "admin_manual:full"
+        };
 
         var execution = new CrawlJobExecution
         {
@@ -63,13 +75,13 @@ public class IndexModel(AppDbContext db) : PageModel
             CrawlJobId  = job.Id,
             Status      = "running",
             StartedAt   = DateTimeOffset.UtcNow,
-            TriggeredBy = $"admin_manual:{CrawlMode}"
+            TriggeredBy = triggeredBy
         };
 
         db.CrawlJobExecutions.Add(execution);
         await db.SaveChangesAsync(cancellationToken);
 
-        TempData["Success"] = $"Crawl «{job.Name}» با موفقیت شروع شد (ID: {execution.Id:N})";
+        TempData["Success"] = $"Crawl «{job.Name}» در صف Worker قرار گرفت (ID: {execution.Id:N}). برای اجرا Worker را روشن نگه دارید.";
         return RedirectToPage();
     }
 
@@ -100,7 +112,7 @@ public class IndexModel(AppDbContext db) : PageModel
     private async Task LoadPageDataAsync(CancellationToken cancellationToken)
     {
         Categories      = await db.PoiCategories.Where(c => c.IsEnabled).OrderBy(c => c.DisplayOrder).ToListAsync(cancellationToken);
-        AvailableJobs   = await db.CrawlJobs.Where(j => j.IsEnabled).OrderBy(j => j.Name).ToListAsync(cancellationToken);
+        AvailableJobs   = await db.CrawlJobs.OrderBy(j => j.Name).ToListAsync(cancellationToken);
         RunningCount    = await db.CrawlJobExecutions.CountAsync(e => e.Status == "running", cancellationToken);
         ActiveExecutions = await BuildActiveExecutionsAsync(cancellationToken);
     }

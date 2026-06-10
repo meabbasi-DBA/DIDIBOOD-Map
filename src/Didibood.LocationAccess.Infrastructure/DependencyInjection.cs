@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IPoiNormalizer, PoiNormalizer>();
         services.AddScoped<ICrawlPlanner, CrawlPlanner>();
         services.AddScoped<ICrawlExecutor, CrawlExecutor>();
+        services.AddScoped<ICrawlExecutionRunner, CrawlExecutionRunner>();
         services.AddScoped<IPoiRepository, PoiRepository>();
         services.AddScoped<ICrawlJobRepository, CrawlJobRepository>();
         services.AddScoped<ISystemConfigurationStore, SystemConfigurationStore>();
@@ -53,8 +54,7 @@ public static class DependencyInjection
 
         services.AddHttpClient<INeshanSearchClient, NeshanSearchClient>(client =>
             {
-                client.BaseAddress = new Uri("https://api.neshan.org/");
-                client.Timeout = TimeSpan.FromSeconds(30);
+                client.Timeout = TimeSpan.FromSeconds(10);
             })
             .AddTransientHttpErrorPolicy(policy =>
                 policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));

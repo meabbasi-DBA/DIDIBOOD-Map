@@ -14,5 +14,5 @@ public sealed class NeshanOptions
         !string.IsNullOrWhiteSpace(WebMapKey) ? WebMapKey : ApiKey;
 
     public string GetSearchApiKey() =>
-        !string.IsNullOrWhiteSpace(LocationApiKey) ? LocationApiKey : ApiKey;
+        !string.IsNullOrWhiteSpace(ApiKey) ? ApiKey : LocationApiKey;
 }

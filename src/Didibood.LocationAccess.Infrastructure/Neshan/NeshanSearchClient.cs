@@ -1,5 +1,6 @@
+using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Didibood.LocationAccess.Application.Abstractions;
 using Didibood.LocationAccess.Application.Configuration;
@@ -15,6 +16,9 @@ public sealed class NeshanSearchClient(
     IOptions<NeshanOptions> options,
     ILogger<NeshanSearchClient> logger) : INeshanSearchClient
 {
+    private const string SearchBaseUrl = "https://api.neshan.org/v1/search";
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -26,45 +30,103 @@ public sealed class NeshanSearchClient(
         double longitude,
         CancellationToken cancellationToken = default)
     {
+        ValidateSearchInput(term, latitude, longitude);
+
         var apiKey = options.Value.GetSearchApiKey();
         if (string.IsNullOrWhiteSpace(apiKey))
-        {
             throw new NeshanAuthenticationException("Neshan API key is not configured.", 480);
+
+        var url = BuildUrl(term, latitude, longitude);
+        logger.LogInformation("Neshan Search request URL: {Url}", url);
+
+        Exception? lastNetworkError = null;
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            if (attempt > 0)
+                logger.LogWarning("Retrying Neshan Search after network failure (attempt {Attempt})", attempt + 1);
+
+            try
+            {
+                return await SendSearchRequestAsync(url, apiKey, cancellationToken);
+            }
+            catch (NeshanException)
+            {
+                throw;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                lastNetworkError = ex;
+            }
         }
 
-        var url =
-            $"v1/search?term={Uri.EscapeDataString(term)}&lat={latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&lng={longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        throw new NeshanServiceException(
+            $"Neshan Search network failure: {lastNetworkError?.Message}",
+            httpStatus: 503);
+    }
 
+    private async Task<NeshanSearchResponse> SendSearchRequestAsync(
+        string url,
+        string apiKey,
+        CancellationToken cancellationToken)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Api-Key", apiKey);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        logger.LogDebug("Neshan Search: term={Term}, lat={Lat}, lng={Lng}", term, latitude, longitude);
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(RequestTimeout);
 
-        var started = DateTime.UtcNow;
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        var elapsed = DateTime.UtcNow - started;
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var stopwatch = Stopwatch.StartNew();
+        using var response = await httpClient.SendAsync(request, timeoutCts.Token);
+        var body = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+        stopwatch.Stop();
 
         logger.LogInformation(
             "Neshan Search completed in {ElapsedMs}ms with HTTP {StatusCode}",
-            elapsed.TotalMilliseconds,
+            stopwatch.Elapsed.TotalMilliseconds,
             (int)response.StatusCode);
 
         if (!response.IsSuccessStatusCode)
         {
             var error = NeshanExceptionMapper.TryParseError(body);
-            throw NeshanExceptionMapper.Map((int)response.StatusCode, error);
+            var code = error?.Code > 0 ? error.Code : (int)response.StatusCode;
+            throw NeshanExceptionMapper.Map(code, error);
         }
 
         var result = JsonSerializer.Deserialize<NeshanSearchResponse>(body, JsonOptions)
                      ?? new NeshanSearchResponse();
 
-        if (result.Items is null)
-        {
-            result.Items = [];
-        }
+        result.Items ??= [];
+        if (result.Count <= 0 && result.Items.Count > 0)
+            result.Count = result.Items.Count;
 
         return result;
+    }
+
+    private static void ValidateSearchInput(string term, double latitude, double longitude)
+    {
+        if (string.IsNullOrWhiteSpace(term))
+            throw new NeshanInvalidArgumentException("Search term is required.");
+
+        if (latitude is < -90 or > 90)
+            throw new NeshanCoordinateException("Latitude must be between -90 and 90.");
+
+        if (longitude is < -180 or > 180)
+            throw new NeshanCoordinateException("Longitude must be between -180 and 180.");
+    }
+
+    private static string BuildUrl(string term, double latitude, double longitude)
+    {
+        var query = new Dictionary<string, string>
+        {
+            ["term"] = term,
+            ["lat"] = latitude.ToString(CultureInfo.InvariantCulture),
+            ["lng"] = longitude.ToString(CultureInfo.InvariantCulture)
+        };
+
+        var qs = string.Join('&', query.Select(kv =>
+            $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+        return $"{SearchBaseUrl}?{qs}";
     }
 }
