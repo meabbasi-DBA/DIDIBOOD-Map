@@ -38,3 +38,5 @@ TestResults/
 
 # Local secrets (use appsettings.Development.json locally or env vars)
 src/**/appsettings.Development.json
+deploy/production/.env.production
+docker-compose.override.yml

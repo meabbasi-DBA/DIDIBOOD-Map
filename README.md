@@ -77,3 +77,26 @@ curl -X POST http://localhost:5080/api/location-access \
 ## Neshan Search client
 
 `INeshanSearchClient` sends `Api-Key` **only in headers** (never query string). Reference: `scripts/neshan-search.mjs`.
+
+## Production deploy (map.didibood.ir)
+
+```bash
+# From monorepo laptop (uses deploy/production/.env.deploy.local + .secrets.env)
+cd DIDIBOOD-Map
+./deploy/production/deploy-remote.sh
+```
+
+Server path: `/opt/didibood-map` — Docker stack (PostGIS + API + Worker + Admin) behind nginx.
+
+**DNS (Arvan Cloud):** `ARVAN_API_KEY=... ./deploy/production/setup-arvan-dns.sh` or add A record `map.didibood.ir → 37.32.12.208` (cloud off). Until DNS propagates, use https://map.37.32.12.208.nip.io/
+
+### GitHub Actions secrets
+
+| Secret | Description |
+|--------|-------------|
+| `DEPLOY_HOST` | Server IP |
+| `DEPLOY_SSH_KEY` | SSH private key |
+| `MAP_POSTGRES_PASSWORD` | PostGIS password |
+| `NESHAN_API_KEY` | Neshan service key |
+| `NESHAN_LOCATION_API_KEY` | Optional search key |
+| `NESHAN_WEB_MAP_KEY` | Optional web map key |

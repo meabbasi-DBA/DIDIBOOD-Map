@@ -15,7 +15,7 @@ COPY src/Didibood.LocationAccess.Admin/Didibood.LocationAccess.Admin.csproj \
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     NUGET_XMLDOC_MODE=skip
 
-RUN dotnet restore Didibood.LocationAccess.sln --disable-parallel
+RUN dotnet restore src/Didibood.LocationAccess.Admin/Didibood.LocationAccess.Admin.csproj --disable-parallel
 
 COPY src/ ./src/
 

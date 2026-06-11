@@ -1,0 +1,30 @@
+# Production overrides — use with: docker compose -f docker-compose.yml -f docker-compose.production.yml
+services:
+  postgres:
+    container_name: didibood-map-postgres
+    ports: !override []
+    restart: unless-stopped
+
+  api:
+    container_name: didibood-map-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    ports: !override
+      - "127.0.0.1:5080:8080"
+    restart: unless-stopped
+
+  worker:
+    container_name: didibood-map-worker
+    environment:
+      DOTNET_ENVIRONMENT: Production
+    restart: unless-stopped
+
+  admin:
+    container_name: didibood-map-admin
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ApiSettings__BaseUrl: http://api:8080
+      ApiSettings__PublicBaseUrl: ${MAP_PUBLIC_ORIGIN:-http://127.0.0.1:5080}
+    ports: !override
+      - "127.0.0.1:5081:8080"
+    restart: unless-stopped

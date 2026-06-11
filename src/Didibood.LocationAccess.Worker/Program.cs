@@ -12,7 +12,7 @@ try
     var builder = Host.CreateApplicationBuilder(args);
     builder.Services.AddSerilog();
     builder.Services.AddApplication();
-    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddInfrastructure(builder.Configuration, runStartupValidation: false);
     builder.Services.AddHostedService<WorkerHeartbeatService>();
     builder.Services.AddHostedService<CrawlSchedulerService>();
     builder.Services.AddHostedService<ManualCrawlHostedService>();

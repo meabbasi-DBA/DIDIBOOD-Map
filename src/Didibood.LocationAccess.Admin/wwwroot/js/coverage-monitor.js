@@ -1,6 +1,6 @@
 (function () {
     const cfg = window.coverageConfig || {};
-    const apiBase = (cfg.apiBase || '').replace(/\/$/, '');
+    const apiBase = (cfg.apiBase || window.location.origin || '').replace(/\/$/, '');
     const webMapKey = cfg.webMapKey || '';
     const tehranBounds = cfg.tehranBounds || {
         minLat: 35.48,

@@ -21,12 +21,16 @@ public class IndexModel(IHttpClientFactory httpClientFactory, IConfiguration con
 
     public void OnGet()
     {
-        ApiBaseUrl = config["ApiSettings:BaseUrl"]?.TrimEnd('/') ?? "http://localhost:5080";
+        ApiBaseUrl = config["ApiSettings:PublicBaseUrl"]?.TrimEnd('/')
+                     ?? config["ApiSettings:BaseUrl"]?.TrimEnd('/')
+                     ?? "http://localhost:5080";
     }
 
     public async Task<IActionResult> OnPostCompareAsync(CancellationToken cancellationToken)
     {
-        ApiBaseUrl = config["ApiSettings:BaseUrl"]?.TrimEnd('/') ?? "http://localhost:5080";
+        ApiBaseUrl = config["ApiSettings:PublicBaseUrl"]?.TrimEnd('/')
+                     ?? config["ApiSettings:BaseUrl"]?.TrimEnd('/')
+                     ?? "http://localhost:5080";
 
         var request = new DataQualityCompareRequest
         {

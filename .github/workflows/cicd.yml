@@ -1,0 +1,98 @@
+# DIDIBOOD-Map — CI on PR/push; CD to production on push to main.
+#
+# Required GitHub repository secrets:
+#   DEPLOY_HOST           — e.g. 37.32.12.208
+#   DEPLOY_SSH_KEY        — private key for DEPLOY_USER@DEPLOY_HOST
+#   MAP_POSTGRES_PASSWORD — PostGIS password
+#   NESHAN_API_KEY
+# Optional:
+#   DEPLOY_USER           — default ubuntu
+#   DEPLOY_PATH           — default /opt/didibood-map
+#   NESHAN_LOCATION_API_KEY
+#   NESHAN_WEB_MAP_KEY
+#   MAP_PUBLIC_DOMAIN     — default map.didibood.ir
+#   CERTBOT_EMAIL
+
+name: Map CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: didibood-map-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore Didibood.LocationAccess.sln
+
+      - name: Build
+        run: dotnet build Didibood.LocationAccess.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/Didibood.LocationAccess.Tests/Didibood.LocationAccess.Tests.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Docker build smoke
+        run: |
+          docker build --platform linux/amd64 -f docker/Dockerfile.api -t didibood-map-api:ci .
+          docker build --platform linux/amd64 -f docker/Dockerfile.worker -t didibood-map-worker:ci .
+          docker build --platform linux/amd64 -f docker/Dockerfile.admin -t didibood-map-admin:ci .
+
+  deploy:
+    name: Deploy production
+    needs: quality
+    continue-on-error: true
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Write server env
+        env:
+          MAP_POSTGRES_PASSWORD: ${{ secrets.MAP_POSTGRES_PASSWORD }}
+          NESHAN_API_KEY: ${{ secrets.NESHAN_API_KEY }}
+          NESHAN_LOCATION_API_KEY: ${{ secrets.NESHAN_LOCATION_API_KEY }}
+          NESHAN_WEB_MAP_KEY: ${{ secrets.NESHAN_WEB_MAP_KEY }}
+          MAP_PUBLIC_DOMAIN: ${{ secrets.MAP_PUBLIC_DOMAIN }}
+        run: |
+          DOMAIN="${MAP_PUBLIC_DOMAIN:-map.didibood.ir}"
+          cat > deploy/production/.env.production <<EOF
+          POSTGRES_PASSWORD=${MAP_POSTGRES_PASSWORD}
+          NESHAN_API_KEY=${NESHAN_API_KEY}
+          NESHAN_LOCATION_API_KEY=${NESHAN_LOCATION_API_KEY:-${NESHAN_API_KEY}}
+          NESHAN_WEB_MAP_KEY=${NESHAN_WEB_MAP_KEY:-${NESHAN_API_KEY}}
+          MAP_PUBLIC_DOMAIN=${DOMAIN}
+          MAP_PUBLIC_ORIGIN=https://${DOMAIN}
+          ENABLE_TLS=1
+          CERTBOT_EMAIL=${CERTBOT_EMAIL:-admin@${DOMAIN}}
+          EOF
+          chmod 600 deploy/production/.env.production
+
+      - name: Deploy to server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          chmod +x scripts/deploy-production.sh
+          scripts/deploy-production.sh

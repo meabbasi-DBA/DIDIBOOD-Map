@@ -24,7 +24,8 @@ public class IndexModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        ApiBaseUrl = config["ApiSettings:BaseUrl"]?.TrimEnd('/')
+        ApiBaseUrl = config["ApiSettings:PublicBaseUrl"]?.TrimEnd('/')
+                     ?? config["ApiSettings:BaseUrl"]?.TrimEnd('/')
                      ?? "http://localhost:5080";
 
         WebMapKey = neshanOptions.Value.GetWebMapKey();

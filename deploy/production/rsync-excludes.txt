@@ -1,0 +1,17 @@
+.git/
+.github/
+.cursor/
+bin/
+obj/
+TestResults/
+node_modules/
+*.log
+.env
+.env.*
+!.env.production
+!.env.production.example
+docker-compose.override.yml
+Mehdi@55285
+Mehdi@55285.pub
+*.docx
+~$*
