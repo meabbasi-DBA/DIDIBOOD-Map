@@ -86,4 +86,4 @@ echo "==> Bootstrap on server..."
   "chmod +x ${DEPLOY_PATH}/deploy/production/bootstrap.sh && APP_ROOT='${DEPLOY_PATH}' SKIP_BUILD='${SKIP_BUILD:-0}' bash ${DEPLOY_PATH}/deploy/production/bootstrap.sh"
 
 echo ""
-echo "Done. Open: https://${MAP_PUBLIC_DOMAIN}/ (or https://map.37.32.12.208.nip.io/ until DNS propagates)"
+echo "Done. Open: https://${MAP_PUBLIC_DOMAIN}/"

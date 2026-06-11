@@ -5,8 +5,7 @@ set -euo pipefail
 APP_ROOT="${APP_ROOT:-/opt/didibood-map}"
 DEPLOY="${APP_ROOT}/deploy/production"
 MAP_PUBLIC_DOMAIN="${MAP_PUBLIC_DOMAIN:-map.didibood.ir}"
-MAP_FALLBACK_HOST="${MAP_FALLBACK_HOST:-map.37.32.12.208.nip.io}"
-MAP_SERVER_NAMES="${MAP_PUBLIC_DOMAIN} ${MAP_FALLBACK_HOST}"
+MAP_SERVER_NAMES="${MAP_PUBLIC_DOMAIN}"
 MAP_PUBLIC_ORIGIN="${MAP_PUBLIC_ORIGIN:-https://${MAP_PUBLIC_DOMAIN}}"
 ENABLE_TLS="${ENABLE_TLS:-1}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:-admin@didibood.ir}"
@@ -103,10 +102,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx 2>/dev/null || 
 USE_SSL=0
 if [[ "$ENABLE_TLS" == "1" ]]; then
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot python3-certbot-nginx 2>/dev/null || true
-  CERT_PRIMARY="${MAP_FALLBACK_HOST}"
-  if dig +short "${MAP_PUBLIC_DOMAIN}" A | grep -q .; then
-    CERT_PRIMARY="${MAP_PUBLIC_DOMAIN}"
-  fi
+  CERT_PRIMARY="${MAP_PUBLIC_DOMAIN}"
   if [[ ! -f "/etc/letsencrypt/live/${CERT_PRIMARY}/fullchain.pem" ]]; then
     echo "==> Obtaining Let's Encrypt certificate (${CERT_PRIMARY})..."
     sudo mkdir -p /var/www/certbot
@@ -120,12 +116,12 @@ if [[ "$ENABLE_TLS" == "1" ]]; then
       || echo "    Warning: certbot failed — using HTTP until DNS is configured"
   else
     USE_SSL=1
-    CERT_PRIMARY="$(basename "$(ls -d /etc/letsencrypt/live/*/ 2>/dev/null | grep -E 'map\.|nip\.io' | head -1)")"
+    CERT_PRIMARY="${MAP_PUBLIC_DOMAIN}"
   fi
 fi
 
 if [[ "$USE_SSL" == "1" ]]; then
-  CERT_DOMAIN="${CERT_PRIMARY:-${MAP_FALLBACK_HOST}}"
+  CERT_DOMAIN="${CERT_PRIMARY:-${MAP_PUBLIC_DOMAIN}}"
   sudo sed -e "s|__SERVER_NAMES__|${MAP_SERVER_NAMES}|g" \
            -e "s|__PUBLIC_DOMAIN__|${CERT_DOMAIN}|g" \
            "${DEPLOY}/nginx/map-didiboos-ssl.conf" \

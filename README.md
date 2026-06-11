@@ -88,7 +88,7 @@ cd DIDIBOOD-Map
 
 Server path: `/opt/didibood-map` — Docker stack (PostGIS + API + Worker + Admin) behind nginx.
 
-**DNS (Arvan Cloud):** `ARVAN_API_KEY=... ./deploy/production/setup-arvan-dns.sh` or add A record `map.didibood.ir → 37.32.12.208` (cloud off). Until DNS propagates, use https://map.37.32.12.208.nip.io/
+**DNS (Arvan Cloud):** `ARVAN_API_KEY=... ./deploy/production/setup-arvan-dns.sh` or add A record `map.didibood.ir → 37.32.12.208` (cloud off).
 
 ### GitHub Actions secrets
 
