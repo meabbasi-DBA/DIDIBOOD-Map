@@ -170,6 +170,14 @@
                 <i class="bi bi-circle-fill" style="font-size:.5rem"></i>آنلاین
             </span>
             <span class="text-muted small">@DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm") UTC</span>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <form asp-page="/Account/Logout" method="post" class="m-0">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-box-arrow-right me-1"></i>خروج (@User.Identity.Name)
+                    </button>
+                </form>
+            }
         </div>
 
         <main class="page-content">

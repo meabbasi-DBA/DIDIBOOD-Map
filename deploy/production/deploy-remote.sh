@@ -30,6 +30,7 @@ fi
 if [[ ! -f "$ENV_FILE" ]]; then
   : "${NESHAN_API_KEY:?Set NESHAN_API_KEY in monorepo .secrets.env}"
   MAP_DB_PASSWORD="${MAP_POSTGRES_PASSWORD:-$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)}"
+  ADMIN_PASSWORD="${ADMIN_AUTH_PASSWORD:-$(openssl rand -base64 18 | tr -d '/+=' | head -c 16)}"
   cat >"$ENV_FILE" <<EOF
 POSTGRES_PASSWORD=${MAP_DB_PASSWORD}
 NESHAN_API_KEY=${NESHAN_API_KEY}
@@ -39,9 +40,20 @@ MAP_PUBLIC_DOMAIN=${MAP_PUBLIC_DOMAIN}
 MAP_PUBLIC_ORIGIN=https://${MAP_PUBLIC_DOMAIN}
 ENABLE_TLS=1
 CERTBOT_EMAIL=admin@${MAP_PUBLIC_DOMAIN}
+ADMIN_AUTH_USERNAME=admin
+ADMIN_AUTH_PASSWORD=${ADMIN_PASSWORD}
 EOF
   chmod 600 "$ENV_FILE"
   echo "==> Created ${ENV_FILE}"
+fi
+
+if [[ -f "$ENV_FILE" ]] && ! grep -q '^ADMIN_AUTH_PASSWORD=' "$ENV_FILE"; then
+  ADMIN_PASSWORD="${ADMIN_AUTH_PASSWORD:-$(openssl rand -base64 18 | tr -d '/+=' | head -c 16)}"
+  {
+    echo "ADMIN_AUTH_USERNAME=admin"
+    echo "ADMIN_AUTH_PASSWORD=${ADMIN_PASSWORD}"
+  } >>"$ENV_FILE"
+  echo "==> Added admin credentials to ${ENV_FILE}"
 fi
 
 RSYNC_EXCLUDES="${ROOT}/deploy/production/rsync-excludes.txt"
@@ -70,7 +82,9 @@ rsync -az -e "$RSYNC_SSH" \
 if [[ "${SKIP_IMAGE_TRANSFER:-0}" != "1" ]] && command -v docker >/dev/null 2>&1; then
   echo "==> Building images locally (linux/amd64 for server)..."
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
-  (cd "$ROOT" && docker compose -f docker-compose.yml -f docker-compose.production.yml build)
+  # shellcheck disable=SC1090
+  set -a && source "$ENV_FILE" && set +a
+  (cd "$ROOT" && docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file "$ENV_FILE" build)
 
   echo "==> Transferring images to server..."
   docker pull postgis/postgis:16-3.4 2>/dev/null || true

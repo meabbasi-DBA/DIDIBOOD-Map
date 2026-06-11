@@ -45,7 +45,7 @@ fi
 if command -v docker >/dev/null 2>&1; then
   echo "==> Building linux/amd64 images..."
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
-  (cd "$ROOT" && docker compose -f docker-compose.yml -f docker-compose.production.yml build)
+  (cd "$ROOT" && docker compose -f docker-compose.yml -f docker-compose.production.yml --env-file "$ENV_FILE" build)
   echo "==> Transferring images..."
   docker pull postgis/postgis:16-3.4 2>/dev/null || true
   for img in postgis/postgis:16-3.4 didibood-map-api didibood-map-worker didibood-map-admin; do

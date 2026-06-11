@@ -25,6 +25,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ApiSettings__BaseUrl: http://api:8080
       ApiSettings__PublicBaseUrl: ${MAP_PUBLIC_ORIGIN:-http://127.0.0.1:5080}
+      AdminAuth__Username: ${ADMIN_AUTH_USERNAME:-admin}
+      AdminAuth__Password: ${ADMIN_AUTH_PASSWORD:?Set ADMIN_AUTH_PASSWORD}
     ports: !override
       - "127.0.0.1:5081:8080"
     restart: unless-stopped
