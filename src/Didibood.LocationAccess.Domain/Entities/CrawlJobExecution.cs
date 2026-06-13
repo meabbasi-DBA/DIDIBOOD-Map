@@ -14,6 +14,7 @@ public class CrawlJobExecution
     public int FailedRecords { get; set; }
     public int CellsProcessed { get; set; }
     public int CellsFailed { get; set; }
+    public int TotalTasksPlanned { get; set; }
     public string? ErrorSummary { get; set; }
     public string TriggeredBy { get; set; } = "scheduler";
 

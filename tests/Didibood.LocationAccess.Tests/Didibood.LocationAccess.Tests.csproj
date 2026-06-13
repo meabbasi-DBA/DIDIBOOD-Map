@@ -3,6 +3,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="..\..\data\tehran-areas-22.geojson" Link="data\tehran-areas-22.geojson" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Didibood.LocationAccess.Application\Didibood.LocationAccess.Application.csproj" />
     <ProjectReference Include="..\..\src\Didibood.LocationAccess.Infrastructure\Didibood.LocationAccess.Infrastructure.csproj" />
   </ItemGroup>

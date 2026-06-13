@@ -8,4 +8,5 @@ public sealed class CrawlExecutionSummary
     public int FailedRecords { get; set; }
     public int CellsProcessed { get; set; }
     public int CellsFailed { get; set; }
+    public string? LastLiveError { get; set; }
 }

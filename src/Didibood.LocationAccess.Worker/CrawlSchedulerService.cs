@@ -68,7 +68,7 @@ public sealed class CrawlSchedulerService(
             var execution = await jobRepo.StartExecutionAsync(job.Id, "scheduler", ct);
             try
             {
-                var summary = await runner.RunJobAsync(job, ct);
+                var summary = await runner.RunJobAsync(job, execution.Id, ct);
                 await jobRepo.CompleteExecutionAsync(execution.Id, summary, ct);
                 _lastRunTimes[job.Id] = now;
 

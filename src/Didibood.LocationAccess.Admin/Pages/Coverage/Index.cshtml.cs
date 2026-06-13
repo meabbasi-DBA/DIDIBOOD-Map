@@ -14,12 +14,14 @@ public class IndexModel(
     IConfiguration config,
     IOptions<NeshanOptions> neshanOptions) : PageModel
 {
-    private static readonly TehranBoundsBox Defaults = new(35.48, 35.92, 51.08, 51.65);
+    private static readonly TehranBoundsBox Defaults = new(35.50, 35.88, 51.10, 51.62);
 
     public string ApiBaseUrl { get; private set; } = "";
     public string WebMapKey { get; private set; } = "";
     public bool HasWebMapKey { get; private set; }
     public TehranBoundsBox TehranBounds { get; private set; } = Defaults;
+    public short GridResolution { get; private set; } = 7;
+    public string BoundaryMode { get; private set; } = "municipality";
     public List<PoiCategory> Categories { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
@@ -32,12 +34,48 @@ public class IndexModel(
         HasWebMapKey = !string.IsNullOrWhiteSpace(WebMapKey);
 
         TehranBounds = await LoadTehranBoundsAsync(cancellationToken);
+        GridResolution = await LoadGridResolutionAsync(cancellationToken);
+        BoundaryMode = await LoadBoundaryModeAsync(cancellationToken);
 
         Categories = await db.PoiCategories
             .AsNoTracking()
             .Where(c => c.IsEnabled)
             .OrderBy(c => c.DisplayOrder)
             .ToListAsync(cancellationToken);
+    }
+
+    private async Task<string> LoadBoundaryModeAsync(CancellationToken ct)
+    {
+        var mode = await db.SystemConfigurations
+            .AsNoTracking()
+            .Where(c => c.ConfigKey == "tehran.boundary.mode")
+            .Select(c => c.ConfigValue)
+            .FirstOrDefaultAsync(ct);
+
+        return string.IsNullOrWhiteSpace(mode) ? "municipality" : mode;
+    }
+
+    private async Task<short> LoadGridResolutionAsync(CancellationToken ct)
+    {
+        var resolutions = await db.H3CoverageCells
+            .AsNoTracking()
+            .Select(c => c.Resolution)
+            .Distinct()
+            .ToListAsync(ct);
+
+        if (resolutions.Count == 1)
+            return resolutions[0];
+
+        var configured = await db.SystemConfigurations
+            .AsNoTracking()
+            .Where(c => c.ConfigKey == "crawl.h3_resolution")
+            .Select(c => c.ConfigValue)
+            .FirstOrDefaultAsync(ct);
+
+        if (short.TryParse(configured, out var parsed))
+            return parsed;
+
+        return 7;
     }
 
     private async Task<TehranBoundsBox> LoadTehranBoundsAsync(CancellationToken ct)

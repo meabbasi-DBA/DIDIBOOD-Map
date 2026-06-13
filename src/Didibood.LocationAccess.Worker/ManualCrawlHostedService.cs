@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using Didibood.LocationAccess.Application.Abstractions;
+using Didibood.LocationAccess.Application.Crawler;
+using Didibood.LocationAccess.Domain.Exceptions;
 using Didibood.LocationAccess.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,10 +12,11 @@ public sealed class ManualCrawlHostedService(
     ILogger<ManualCrawlHostedService> logger) : BackgroundService
 {
     private static readonly ConcurrentDictionary<Guid, byte> Active = new();
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("ManualCrawlHostedService started");
+        logger.LogInformation("ManualCrawlHostedService started (poll every {Seconds}s)", PollInterval.TotalSeconds);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -30,7 +33,7 @@ public sealed class ManualCrawlHostedService(
                 logger.LogError(ex, "Error polling manual crawl executions");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            await Task.Delay(PollInterval, stoppingToken);
         }
     }
 
@@ -41,11 +44,8 @@ public sealed class ManualCrawlHostedService(
 
         var pendingIds = await db.CrawlJobExecutions
             .AsNoTracking()
-            .Where(e => e.Status == "running"
-                        && e.TriggeredBy.StartsWith("admin_manual")
-                        && e.RequestCount == 0
-                        && e.CellsProcessed == 0
-                        && e.CellsFailed == 0)
+            .Where(e => (e.Status == "queued" || e.Status == "running")
+                        && e.TriggeredBy.StartsWith("admin_manual"))
             .Select(e => e.Id)
             .ToListAsync(ct);
 
@@ -70,8 +70,18 @@ public sealed class ManualCrawlHostedService(
             var execution = await db.CrawlJobExecutions
                 .FirstOrDefaultAsync(e => e.Id == executionId);
 
-            if (execution is null || execution.Status != "running")
+            if (execution is null)
                 return;
+
+            if (execution.Status == "queued")
+            {
+                execution.Status = "running";
+                await db.SaveChangesAsync(CancellationToken.None);
+            }
+            else if (execution.Status != "running")
+            {
+                return;
+            }
 
             var job = await db.CrawlJobs.FirstOrDefaultAsync(j => j.Id == execution.CrawlJobId);
             if (job is null)
@@ -81,9 +91,10 @@ public sealed class ManualCrawlHostedService(
             }
 
             logger.LogInformation(
-                "Starting manual crawl execution {ExecutionId} ({Trigger})",
+                "Starting manual crawl execution {ExecutionId} ({Trigger}) using job {JobName}",
                 executionId,
-                execution.TriggeredBy);
+                execution.TriggeredBy,
+                job.Name);
 
             var summary = await runner.RunManualExecutionAsync(execution, job, CancellationToken.None);
             await jobRepo.CompleteExecutionAsync(executionId, summary, CancellationToken.None);
@@ -94,6 +105,37 @@ public sealed class ManualCrawlHostedService(
                 summary.NewRecords,
                 summary.UpdatedRecords,
                 summary.TotalRequests);
+        }
+        catch (CrawlExecutionStoppedException ex)
+        {
+            logger.LogInformation("Manual crawl {ExecutionId} stopped ({Status})", executionId, ex.ExecutionStatus);
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jobRepo = scope.ServiceProvider.GetRequiredService<ICrawlJobRepository>();
+                var execution = await db.CrawlJobExecutions.AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == executionId);
+
+                if (execution is null)
+                    return;
+
+                var summary = new CrawlExecutionSummary
+                {
+                    TotalRequests = execution.RequestCount,
+                    NewRecords = execution.NewRecords,
+                    UpdatedRecords = execution.UpdatedRecords,
+                    FailedRecords = execution.FailedRecords,
+                    CellsProcessed = execution.CellsProcessed,
+                    CellsFailed = execution.CellsFailed
+                };
+
+                await jobRepo.StopExecutionAsync(executionId, ex.ExecutionStatus, summary, CancellationToken.None);
+            }
+            catch (Exception inner)
+            {
+                logger.LogError(inner, "Failed to record stop for execution {ExecutionId}", executionId);
+            }
         }
         catch (Exception ex)
         {

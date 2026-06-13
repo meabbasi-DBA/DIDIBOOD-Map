@@ -53,10 +53,24 @@ else
                         <td class="small text-danger">@e.FailedRecords</td>
                         <td class="small">@e.CellsProcessed</td>
                         <td>
-                            <span class="badge badge-running d-flex align-items-center gap-1" style="width:fit-content">
-                                <span class="spinner-grow spinner-grow-sm" role="status" style="width:.4rem;height:.4rem"></span>
-                                در حال اجرا
-                            </span>
+                            @if (e.Status == "queued")
+                            {
+                                <span class="badge bg-info d-flex align-items-center gap-1" style="width:fit-content">
+                                    <span class="spinner-border spinner-border-sm" role="status" style="width:.4rem;height:.4rem"></span>
+                                    در صف
+                                </span>
+                            }
+                            else if (e.Status == "paused")
+                            {
+                                <span class="badge bg-warning text-dark" style="width:fit-content">مکث</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-running d-flex align-items-center gap-1" style="width:fit-content">
+                                    <span class="spinner-grow spinner-grow-sm" role="status" style="width:.4rem;height:.4rem"></span>
+                                    در حال اجرا
+                                </span>
+                            }
                         </td>
                     </tr>
                 }

@@ -1,3 +1,4 @@
+using Didibood.LocationAccess.Infrastructure.H3;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -55,5 +56,6 @@ public sealed class DatabaseBootstrapper(
     {
         await db.Database.MigrateAsync(cancellationToken);
         await DbSeeder.SeedAsync(db, cancellationToken);
+        await H3GridSeeder.EnsureTargetGridAsync(db, logger, cancellationToken);
     }
 }

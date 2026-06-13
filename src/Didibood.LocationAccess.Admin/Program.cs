@@ -2,7 +2,9 @@ using Didibood.LocationAccess.Admin.Services;
 using Didibood.LocationAccess.Application;
 using Didibood.LocationAccess.Application.Configuration;
 using Didibood.LocationAccess.Infrastructure;
+using Didibood.LocationAccess.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -60,6 +62,12 @@ try
     });
 
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+    }
 
     if (!app.Environment.IsDevelopment())
     {

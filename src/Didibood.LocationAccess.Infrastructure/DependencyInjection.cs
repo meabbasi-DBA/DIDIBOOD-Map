@@ -47,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<ICrawlExecutionRunner, CrawlExecutionRunner>();
         services.AddScoped<IPoiRepository, PoiRepository>();
         services.AddScoped<ICrawlJobRepository, CrawlJobRepository>();
+        services.AddSingleton<ICrawlLiveTelemetry, FileCrawlLiveTelemetry>();
         services.AddScoped<ISystemConfigurationStore, SystemConfigurationStore>();
         services.AddScoped<IH3CoverageRepository, H3CoverageRepository>();
         services.AddScoped<ICoverageService, CoverageService>();

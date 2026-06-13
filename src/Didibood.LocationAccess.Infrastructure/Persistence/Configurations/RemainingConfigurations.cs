@@ -13,6 +13,9 @@ public sealed class H3CoverageCellConfiguration : IEntityTypeConfiguration<H3Cov
         builder.HasKey(x => x.H3Index);
         builder.Property(x => x.H3Index).HasColumnName("h3_index");
         builder.Property(x => x.Resolution).HasColumnName("resolution");
+        builder.Property(x => x.ParentH3Index).HasColumnName("parent_h3_index");
+        builder.Property(x => x.IsRefined).HasColumnName("is_refined");
+        builder.Property(x => x.MunicipalityMode).HasColumnName("municipality_mode");
         builder.Property(x => x.Status).HasColumnName("status").HasMaxLength(20);
         builder.Property<Point>("Centroid")
             .HasColumnName("centroid")
@@ -23,6 +26,7 @@ public sealed class H3CoverageCellConfiguration : IEntityTypeConfiguration<H3Cov
         builder.Property(x => x.LastCrawlAt).HasColumnName("last_crawl_at");
         builder.Property(x => x.LastSuccessAt).HasColumnName("last_success_at");
         builder.Property(x => x.PoiCount).HasColumnName("poi_count");
+        builder.Property(x => x.RequestCount).HasColumnName("request_count");
         builder.Property(x => x.FailureCount).HasColumnName("failure_count");
         builder.Property(x => x.FailureReason).HasColumnName("failure_reason");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
@@ -69,8 +73,9 @@ public sealed class CrawlJobExecutionConfiguration : IEntityTypeConfiguration<Cr
         builder.Property(x => x.FailedRecords).HasColumnName("failed_records");
         builder.Property(x => x.CellsProcessed).HasColumnName("cells_processed");
         builder.Property(x => x.CellsFailed).HasColumnName("cells_failed");
+        builder.Property(x => x.TotalTasksPlanned).HasColumnName("total_tasks_planned");
         builder.Property(x => x.ErrorSummary).HasColumnName("error_summary");
-        builder.Property(x => x.TriggeredBy).HasColumnName("triggered_by").HasMaxLength(50);
+        builder.Property(x => x.TriggeredBy).HasColumnName("triggered_by").HasMaxLength(256);
         builder.HasOne(x => x.CrawlJob).WithMany(x => x.Executions).HasForeignKey(x => x.CrawlJobId);
     }
 }

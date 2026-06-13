@@ -15,6 +15,75 @@
     </a>
 </div>
 
+<!-- Live crawl control -->
+<div class="card mb-4" id="crawl-live-panel" dir="rtl">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-activity me-2 text-danger"></i>وضعیت Crawl</span>
+        <span class="badge bg-secondary" id="crawl-status-badge">در انتظار</span>
+    </div>
+    <div class="card-body">
+        <div id="crawl-idle-state" class="text-center text-muted py-2">
+            <i class="bi bi-pause-circle fs-4 d-block mb-2"></i>
+            هیچ Crawl فعالی در حال اجرا نیست
+        </div>
+        <div id="crawl-active-state" style="display:none">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <div class="fw-semibold" id="crawl-job-name">—</div>
+                    <small class="text-muted" id="crawl-started-at">—</small>
+                    <div class="small mt-1"><span class="badge bg-secondary" id="crawl-status-label">—</span></div>
+                </div>
+                <div class="text-end small">
+                    <div><span id="crawl-requests">0</span> درخواست Neshan</div>
+                    <div><span id="crawl-cells">0</span> سلول پردازش‌شده</div>
+                    <div class="text-muted" id="crawl-tasks-planned"></div>
+                </div>
+            </div>
+            <div class="progress rounded-pill mb-2" style="height:12px">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger"
+                     id="crawl-progress-bar" style="width:0%"></div>
+            </div>
+            <div class="row g-2 text-center small mb-2">
+                <div class="col-3">
+                    <div class="text-muted">سرعت درخواست</div>
+                    <div class="fw-bold" id="crawl-req-speed">0 /min</div>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted">سرعت سلول</div>
+                    <div class="fw-bold" id="crawl-cell-speed">0 /min</div>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted">POI جدید</div>
+                    <div class="fw-bold text-success" id="crawl-new-poi">0</div>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted">POI بروز</div>
+                    <div class="fw-bold text-warning" id="crawl-updated-poi">0</div>
+                </div>
+            </div>
+            <div id="crawl-live-error" class="alert alert-danger py-2 px-3 small mb-0" style="display:none" role="alert">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                <span id="crawl-live-error-text"></span>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            <button type="button" class="btn btn-success btn-sm" id="btn-crawl-start">
+                <i class="bi bi-play-fill me-1"></i>شروع
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" id="btn-crawl-pause" disabled>
+                <i class="bi bi-pause-fill me-1"></i>مکث
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-crawl-resume" disabled style="display:none">
+                <i class="bi bi-skip-forward-fill me-1"></i>ادامه
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" id="btn-crawl-stop" disabled>
+                <i class="bi bi-stop-fill me-1"></i>توقف
+            </button>
+        </div>
+        <div class="small text-muted text-center mt-2" id="crawl-message"></div>
+    </div>
+</div>
+
 <!-- Top stat cards -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
@@ -73,7 +142,7 @@
                     </div>
                     <span class="text-muted small" dir="rtl">کارهای در حال اجرا</span>
                 </div>
-                <div class="fs-3 fw-bold @(Model.RunningJobs > 0 ? "text-danger" : "")">@Model.RunningJobs</div>
+                <div class="fs-3 fw-bold @(Model.RunningJobs > 0 ? "text-danger" : "")" id="stat-running-jobs">@Model.RunningJobs</div>
                 <small class="text-muted">
                     <a asp-page="/Jobs/Index" class="text-decoration-none">مشاهده همه</a>
                 </small>
@@ -93,7 +162,7 @@
                 <div class="row g-0 text-center mb-3">
                     <div class="col border-end">
                         <div class="text-muted" style="font-size:.75rem" dir="rtl">کل</div>
-                        <div class="fw-bold fs-5">@Model.H3Total.ToString("N0")</div>
+                        <div class="fw-bold fs-5" id="stat-h3-total">@Model.H3Total.ToString("N0")</div>
                     </div>
                     <div class="col border-end">
                         <div class="text-muted" style="font-size:.75rem">Pending</div>
@@ -101,7 +170,7 @@
                     </div>
                     <div class="col border-end">
                         <div class="text-muted" style="font-size:.75rem">Success</div>
-                        <div class="fw-bold fs-5 text-success">@Model.H3Success.ToString("N0")</div>
+                        <div class="fw-bold fs-5 text-success" id="stat-h3-success">@Model.H3Success.ToString("N0")</div>
                     </div>
                     <div class="col border-end">
                         <div class="text-muted" style="font-size:.75rem">Failed</div>
@@ -155,8 +224,8 @@
                         </span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="small"><i class="bi bi-cloud me-2 text-muted"></i>Neshan API</span>
-                        <span class="badge bg-secondary">Unknown</span>
+                        <span class="small"><i class="bi bi-cpu me-2 text-muted"></i>Worker</span>
+                        <span class="badge bg-secondary" id="worker-status-badge">—</span>
                     </li>
                 </ul>
                 <div class="p-3">
@@ -191,7 +260,7 @@
                     <i class="bi bi-clock-history me-1"></i>مدیریت زمان‌بندی
                 </a>
                 <a asp-page="/Crawl/Index" class="btn btn-outline-success btn-sm">
-                    <i class="bi bi-play-circle me-1"></i>شروع Crawl دستی
+                    <i class="bi bi-play-circle me-1"></i>Crawl دستی (پیشرفته)
                 </a>
                 <a asp-page="/Jobs/Index" class="btn btn-outline-info btn-sm">
                     <i class="bi bi-list-task me-1"></i>مانیتور کارها
@@ -199,8 +268,8 @@
                 <a asp-page="/Config/Index" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-gear me-1"></i>پیکربندی
                 </a>
-                <a asp-page="/StaticMap/Index" class="btn btn-outline-dark btn-sm">
-                    <i class="bi bi-map me-1"></i>نقشه استاتیک
+                <a asp-page="/Coverage/Index" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>مانیتور پوشش
                 </a>
             </div>
         </div>

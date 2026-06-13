@@ -43,7 +43,8 @@ public class CoverageServiceTests
 
         Assert.Single(geoJson.Features);
         Assert.Equal(h3, geoJson.Features[0].Properties.H3Index);
-        Assert.NotEmpty(geoJson.Features[0].Geometry.Coordinates);
+        var polygon = Assert.IsType<CoveragePolygonGeometryDto>(geoJson.Features[0].Geometry);
+        Assert.NotEmpty(polygon.Coordinates);
     }
 
     private static AppDbContext CreateDb()

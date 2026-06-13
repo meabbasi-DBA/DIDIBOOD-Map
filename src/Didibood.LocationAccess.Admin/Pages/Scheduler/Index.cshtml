@@ -1,154 +1,433 @@
 @page
+
 @model Didibood.LocationAccess.Admin.Pages.Scheduler.IndexModel
+
 @{
+
     ViewData["Title"] = "زمان‌بندی Crawl";
+
     ViewData["ActivePage"] = "Scheduler";
+
 }
+
+
 
 <div class="d-flex justify-content-between align-items-center mb-4" dir="rtl">
+
     <div>
+
         <div class="page-title">مدیریت زمان‌بندی Crawl</div>
-        <small class="text-muted">فعال/غیرفعال کردن و ویرایش زمانبندی کارهای Crawl</small>
+
+        <small class="text-muted">فعال/غیرفعال کردن و ویرایش تنظیمات کارهای Crawl</small>
+
     </div>
+
 </div>
+
+
 
 <div class="card">
+
     <div class="card-body p-0">
+
         <div class="table-responsive">
+
             <table class="table table-hover mb-0 align-middle">
+
                 <thead>
+
                     <tr>
+
                         <th>نام</th>
+
                         <th>نوع</th>
-                        <th>Cron</th>
+
+                        <th>Cron / اجرا</th>
+
                         <th>رزولوشن H3</th>
+
                         <th>وضعیت</th>
+
                         <th>آخرین اجرا</th>
+
                         <th>نتیجه</th>
+
                         <th class="text-center">عملیات</th>
+
                     </tr>
+
                 </thead>
+
                 <tbody>
+
                     @foreach (var job in Model.Jobs)
+
                     {
+
                         <tr>
+
                             <td>
+
                                 <div class="fw-semibold">@job.Name</div>
+
                                 @if (!string.IsNullOrEmpty(job.Description))
+
                                 {
+
                                     <small class="text-muted">@job.Description</small>
+
                                 }
+
                             </td>
-                            <td><span class="badge bg-secondary">@job.JobType</span></td>
+
                             <td>
-                                <code class="small">@(job.CronExpression ?? "—")</code>
+
+                                @if (job.JobType == CrawlJobKinds.Manual)
+
+                                {
+
+                                    <span class="badge bg-info">manual</span>
+
+                                }
+
+                                else
+
+                                {
+
+                                    <span class="badge bg-secondary">@job.JobType</span>
+
+                                }
+
                             </td>
+
+                            <td>
+
+                                @if (job.JobType == CrawlJobKinds.Manual)
+
+                                {
+
+                                    <span class="badge bg-light text-dark border">فوری — از <a href="/Crawl">Crawl دستی</a></span>
+
+                                    @if (!string.IsNullOrWhiteSpace(job.CronExpression))
+
+                                    {
+
+                                        <br /><code class="small text-muted">@job.CronExpression</code>
+
+                                    }
+
+                                }
+
+                                else
+
+                                {
+
+                                    <code class="small">@(job.CronExpression ?? "—")</code>
+
+                                }
+
+                            </td>
+
                             <td class="text-center">@job.H3Resolution</td>
+
                             <td>
+
                                 @if (job.IsEnabled)
+
                                 {
+
                                     <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>فعال</span>
+
                                 }
+
                                 else
+
                                 {
+
                                     <span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i>غیرفعال</span>
+
                                 }
+
                             </td>
+
                             <td class="small text-muted">
+
                                 @(job.LastRunAt.HasValue ? job.LastRunAt.Value.ToString("yyyy-MM-dd HH:mm") : "—")
+
                             </td>
+
                             <td>
+
                                 @if (job.LastRunStatus != null)
+
                                 {
+
                                     <span class="badge badge-@job.LastRunStatus">@job.LastRunStatus</span>
+
                                 }
+
                                 else
+
                                 {
+
                                     <span class="text-muted small">—</span>
+
                                 }
+
                             </td>
+
                             <td class="text-center">
+
                                 <div class="d-flex gap-1 justify-content-center">
-                                    <!-- Toggle enable/disable -->
+
                                     <form method="post" asp-page-handler="Toggle" class="d-inline">
+
                                         <input type="hidden" name="id" value="@job.Id" />
+
                                         <button type="submit"
+
                                                 class="btn btn-sm @(job.IsEnabled ? "btn-outline-warning" : "btn-outline-success")"
+
                                                 title="@(job.IsEnabled ? "غیرفعال کردن" : "فعال کردن")">
+
                                             <i class="bi @(job.IsEnabled ? "bi-pause-fill" : "bi-play-fill")"></i>
+
                                         </button>
+
                                     </form>
-                                    <!-- Edit cron modal trigger -->
+
                                     <button type="button"
+
                                             class="btn btn-sm btn-outline-primary"
+
                                             data-bs-toggle="modal"
-                                            data-bs-target="#cronModal"
+
+                                            data-bs-target="#jobEditModal"
+
                                             data-job-id="@job.Id"
+
                                             data-job-name="@job.Name"
+
+                                            data-job-type="@job.JobType"
+
                                             data-cron="@job.CronExpression"
-                                            title="ویرایش Cron">
+
+                                            data-description="@job.Description"
+
+                                            data-h3="@job.H3Resolution"
+
+                                            data-parallelism="@job.MaxParallelCells"
+
+                                            title="ویرایش">
+
                                         <i class="bi bi-pencil"></i>
+
                                     </button>
+
+                                    @if (job.JobType == CrawlJobKinds.Manual)
+
+                                    {
+
+                                        <a href="/Crawl" class="btn btn-sm btn-success" title="اجرای فوری">
+
+                                            <i class="bi bi-lightning-fill"></i>
+
+                                        </a>
+
+                                    }
+
                                 </div>
+
                             </td>
+
                         </tr>
+
                     }
+
                     @if (!Model.Jobs.Any())
+
                     {
+
                         <tr>
+
                             <td colspan="8" class="text-center text-muted py-4" dir="rtl">
+
                                 <i class="bi bi-inbox fs-4 d-block mb-2"></i>هیچ کاری تعریف نشده
+
                             </td>
+
                         </tr>
+
                     }
+
                 </tbody>
+
             </table>
+
         </div>
+
     </div>
+
 </div>
 
-<!-- Edit Cron Modal -->
-<div class="modal fade" id="cronModal" tabindex="-1" aria-hidden="true">
+
+
+<!-- Edit Job Modal -->
+
+<div class="modal fade" id="jobEditModal" tabindex="-1" aria-hidden="true">
+
     <div class="modal-dialog">
+
         <div class="modal-content">
-            <form method="post" asp-page-handler="SaveCron">
+
+            <form method="post" asp-page-handler="SaveJob">
+
                 <div class="modal-header">
-                    <h5 class="modal-title" dir="rtl">ویرایش Cron Expression</h5>
+
+                    <h5 class="modal-title" dir="rtl">ویرایش Crawl Job</h5>
+
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
                 </div>
+
                 <div class="modal-body" dir="rtl">
+
                     <input type="hidden" id="modalJobId" name="id" />
+
                     <div class="mb-3">
+
                         <label class="form-label fw-semibold" id="modalJobName">نام کار</label>
+
+                        <div class="form-text" id="modalJobTypeHint"></div>
+
                     </div>
+
                     <div class="mb-3">
-                        <label for="cronInput" class="form-label">Cron Expression</label>
-                        <input type="text" class="form-control font-monospace" id="cronInput" name="cronExpression"
-                               placeholder="مثال: 0 2 * * *" required />
-                        <div class="form-text">
-                            فرمت: دقیقه ساعت روز ماه روزهفته — مثال: <code>0 2 * * *</code> (هر روز ساعت ۲ صبح)
-                        </div>
+
+                        <label for="descriptionInput" class="form-label">توضیحات</label>
+
+                        <input type="text" class="form-control" id="descriptionInput" name="description" maxlength="500" />
+
                     </div>
+
+                    <div class="mb-3" id="cronGroup">
+
+                        <label for="cronInput" class="form-label">Cron Expression</label>
+
+                        <input type="text" class="form-control font-monospace" id="cronInput" name="cronExpression"
+
+                               placeholder="مثال: 0 2 * * *" />
+
+                        <div class="form-text" id="cronHint">
+
+                            فرمت: دقیقه ساعت روز ماه روزهفته — مثال: <code>0 2 * * *</code> (هر روز ساعت ۲ صبح UTC)
+
+                        </div>
+
+                    </div>
+
+                    <div class="row g-2">
+
+                        <div class="col-6">
+
+                            <label for="h3Input" class="form-label">رزولوشن H3</label>
+
+                            <input type="number" class="form-control" id="h3Input" name="h3Resolution" min="6" max="9" required />
+
+                        </div>
+
+                        <div class="col-6">
+
+                            <label for="parallelInput" class="form-label">موازی‌سازی سلول</label>
+
+                            <input type="number" class="form-control" id="parallelInput" name="maxParallelCells" min="1" max="10" required />
+
+                        </div>
+
+                    </div>
+
                 </div>
+
                 <div class="modal-footer">
+
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+
                     <button type="submit" class="btn btn-primary">
+
                         <i class="bi bi-save me-1"></i>ذخیره
+
                     </button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
+
 </div>
+
+
 
 @section Scripts {
+
 <script>
-    const cronModal = document.getElementById('cronModal');
-    cronModal.addEventListener('show.bs.modal', e => {
+
+    const jobEditModal = document.getElementById('jobEditModal');
+
+    const cronInput = document.getElementById('cronInput');
+
+    const cronHint = document.getElementById('cronHint');
+
+    const typeHint = document.getElementById('modalJobTypeHint');
+
+
+
+    jobEditModal.addEventListener('show.bs.modal', e => {
+
         const btn = e.relatedTarget;
-        document.getElementById('modalJobId').value   = btn.dataset.jobId;
+
+        const jobType = btn.dataset.jobType || 'scheduled';
+
+        const isManual = jobType === 'manual';
+
+
+
+        document.getElementById('modalJobId').value = btn.dataset.jobId;
+
         document.getElementById('modalJobName').textContent = btn.dataset.jobName;
-        document.getElementById('cronInput').value    = btn.dataset.cron || '';
+
+        document.getElementById('descriptionInput').value = btn.dataset.description || '';
+
+        document.getElementById('h3Input').value = btn.dataset.h3 || '8';
+
+        document.getElementById('parallelInput').value = btn.dataset.parallelism || '2';
+
+        cronInput.value = btn.dataset.cron || '';
+
+        cronInput.required = !isManual;
+
+
+
+        if (isManual) {
+
+            typeHint.textContent = 'کار manual — اجرای فوری از صفحه Crawl دستی. Cron اختیاری است و برای اجرای خودکار استفاده نمی‌شود.';
+
+            cronHint.innerHTML = 'برای کارهای manual خالی بگذارید. فعال/غیرفعال بودن از دکمه کنار جدول کنترل می‌شود.';
+
+        } else {
+
+            typeHint.textContent = 'کار scheduled — بر اساس Cron به‌صورت خودکار اجرا می‌شود.';
+
+            cronHint.innerHTML = 'فرمت: دقیقه ساعت روز ماه روزهفته — مثال: <code>0 2 * * *</code> (هر روز ساعت ۲ صبح UTC)';
+
+        }
+
     });
+
 </script>
+
 }
+
+

@@ -1,3 +1,4 @@
+using Didibood.LocationAccess.Domain;
 using Didibood.LocationAccess.Domain.Entities;
 using Didibood.LocationAccess.Infrastructure.H3;
 using Microsoft.EntityFrameworkCore;
@@ -32,32 +33,61 @@ internal static class DbSeeder
         {
             var now = DateTimeOffset.UtcNow;
             db.SystemConfigurations.AddRange(
-                new SystemConfiguration { ConfigKey = "search.radius.default_meters", ConfigValue = "2000", ValueType = "int", Description = "Default search radius", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "search.radius.default_meters", ConfigValue = "2000", ValueType = "int", Description = "Neshan search disc radius (meters) for overlap planning", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "search.max_results_per_category", ConfigValue = "20", ValueType = "int", Description = "Max POIs per category", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.batch_size", ConfigValue = "10", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.parallelism", ConfigValue = "2", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.retry.count", ConfigValue = "3", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.retry.delay_ms", ConfigValue = "2000", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.stale_threshold_days", ConfigValue = "30", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
-                new SystemConfiguration { ConfigKey = "tehran.bounds", ConfigValue = """{"minLat":35.48,"maxLat":35.92,"minLng":51.08,"maxLng":51.65}""", ValueType = "json", UpdatedAt = now, UpdatedBy = "system" });
+                new SystemConfiguration { ConfigKey = "crawl.h3_resolution", ConfigValue = "auto", ValueType = "string", Description = "H3 crawl resolution: auto (coarsest overlap-safe) or 6-8", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "crawl.h3_reseed_on_startup", ConfigValue = "false", ValueType = "bool", Description = "Rebuild H3 grid when resolution/cell count differs from plan", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "tehran.boundary.mode", ConfigValue = "municipality", ValueType = "string", Description = "Grid source: municipality polygon or legacy bbox", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "tehran.bounds", ConfigValue = """{"minLat":35.50,"maxLat":35.88,"minLng":51.10,"maxLng":51.62}""", ValueType = "json", UpdatedAt = now, UpdatedBy = "system" });
         }
 
         await db.SaveChangesAsync(cancellationToken);
+
+        await EnsureSystemConfigurationAsync(db, "crawl.h3_resolution", "auto", "string",
+            "H3 crawl resolution: auto (coarsest overlap-safe) or 6-8", cancellationToken);
+        await EnsureSystemConfigurationAsync(db, "crawl.h3_reseed_on_startup", "false", "bool",
+            "Rebuild H3 grid when resolution/cell count differs from plan", cancellationToken);
+        await EnsureSystemConfigurationAsync(db, H3BoundaryRefinementPlanner.RefinementConfigKey, "true", "bool",
+            "Enable virtual sub-centroids inside municipality boundary H3 cells", cancellationToken);
 
         await H3GridSeeder.SeedTehranGridAsync(db, cancellationToken);
 
         if (!await db.CrawlJobs.AnyAsync(cancellationToken))
         {
+            var gridResolution = await db.H3CoverageCells
+                .Select(c => c.Resolution)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (gridResolution == 0)
+                gridResolution = 8;
+
             var now = DateTimeOffset.UtcNow;
             db.CrawlJobs.AddRange(
                 new CrawlJob
                 {
                     Id = Guid.NewGuid(),
+                    Name = "tehran-manual",
+                    Description = "On-demand Tehran crawl — starts immediately from Admin (no cron)",
+                    JobType = CrawlJobKinds.Manual,
+                    CronExpression = null,
+                    H3Resolution = gridResolution,
+                    IsEnabled = true,
+                    MaxParallelCells = 2,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new CrawlJob
+                {
+                    Id = Guid.NewGuid(),
                     Name = "tehran-daily",
                     Description = "Full Tehran grid crawl every 24 hours",
-                    JobType = "scheduled",
+                    JobType = CrawlJobKinds.Scheduled,
                     CronExpression = "0 2 * * *",
-                    H3Resolution = 8,
+                    H3Resolution = gridResolution,
                     IsEnabled = false,
                     MaxParallelCells = 2,
                     CreatedAt = now,
@@ -68,9 +98,9 @@ internal static class DbSeeder
                     Id = Guid.NewGuid(),
                     Name = "tehran-stale-refresh",
                     Description = "Re-crawl stale or failed cells every 7 days",
-                    JobType = "scheduled",
+                    JobType = CrawlJobKinds.Scheduled,
                     CronExpression = "0 3 * * 0",
-                    H3Resolution = 8,
+                    H3Resolution = gridResolution,
                     IsEnabled = false,
                     MaxParallelCells = 2,
                     CreatedAt = now,
@@ -78,5 +108,58 @@ internal static class DbSeeder
                 });
             await db.SaveChangesAsync(cancellationToken);
         }
+
+        await EnsureManualCrawlJobAsync(db, cancellationToken);
+    }
+
+    private static async Task EnsureManualCrawlJobAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        if (await db.CrawlJobs.AnyAsync(j => j.JobType == CrawlJobKinds.Manual, cancellationToken))
+            return;
+
+        var gridResolution = await db.H3CoverageCells
+            .Select(c => c.Resolution)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (gridResolution == 0)
+            gridResolution = 8;
+
+        var now = DateTimeOffset.UtcNow;
+        db.CrawlJobs.Add(new CrawlJob
+        {
+            Id = Guid.NewGuid(),
+            Name = "tehran-manual",
+            Description = "On-demand Tehran crawl — starts immediately from Admin (no cron)",
+            JobType = CrawlJobKinds.Manual,
+            CronExpression = null,
+            H3Resolution = gridResolution,
+            IsEnabled = true,
+            MaxParallelCells = 2,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task EnsureSystemConfigurationAsync(
+        AppDbContext db,
+        string key,
+        string value,
+        string valueType,
+        string description,
+        CancellationToken ct)
+    {
+        if (await db.SystemConfigurations.AnyAsync(c => c.ConfigKey == key, ct))
+            return;
+
+        db.SystemConfigurations.Add(new SystemConfiguration
+        {
+            ConfigKey = key,
+            ConfigValue = value,
+            ValueType = valueType,
+            Description = description,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            UpdatedBy = "system"
+        });
+        await db.SaveChangesAsync(ct);
     }
 }

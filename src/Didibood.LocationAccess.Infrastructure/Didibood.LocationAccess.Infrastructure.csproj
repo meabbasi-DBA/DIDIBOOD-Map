@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <None Include="..\..\data\tehran-areas-22.geojson" Link="data\tehran-areas-22.geojson" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Didibood.LocationAccess.Application\Didibood.LocationAccess.Application.csproj" />
     <ProjectReference Include="..\Didibood.LocationAccess.Domain\Didibood.LocationAccess.Domain.csproj" />
   </ItemGroup>

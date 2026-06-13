@@ -53,7 +53,7 @@ public sealed class CoverageController(ICoverageService coverageService) : Contr
     [HttpGet("heatmap")]
     public async Task<IActionResult> GetHeatmap(
         [FromQuery] string? status,
-        [FromQuery] short? resolution = 8,
+        [FromQuery] short? resolution,
         [FromQuery] int? minPoiCount = null,
         [FromQuery] int? maxAgeDays = null,
         [FromQuery] short? categoryId = null,
@@ -70,5 +70,40 @@ public sealed class CoverageController(ICoverageService coverageService) : Contr
 
         var points = await coverageService.GetHeatmapAsync(query, cancellationToken);
         return Ok(points);
+    }
+
+    [HttpGet("boundary")]
+    public async Task<IActionResult> GetBoundary(CancellationToken cancellationToken)
+    {
+        var boundary = await coverageService.GetBoundaryAsync(cancellationToken);
+        return Ok(boundary);
+    }
+
+    [HttpGet("refinement-debug")]
+    public async Task<IActionResult> GetRefinementDebug(CancellationToken cancellationToken)
+    {
+        var debug = await coverageService.GetRefinementDebugAsync(cancellationToken);
+        return Ok(debug);
+    }
+
+    [HttpGet("debug")]
+    public async Task<IActionResult> GetDebug(CancellationToken cancellationToken)
+    {
+        var debug = await coverageService.GetDebugAsync(cancellationToken);
+        return Ok(debug);
+    }
+
+    [HttpGet("debug/boundary.geojson")]
+    public async Task<IActionResult> GetDebugBoundaryGeoJson(CancellationToken cancellationToken)
+    {
+        var boundary = await coverageService.GetBoundaryAsync(cancellationToken);
+        return Ok(boundary);
+    }
+
+    [HttpGet("debug/cells.geojson")]
+    public async Task<IActionResult> GetDebugCellsGeoJson(CancellationToken cancellationToken)
+    {
+        var geoJson = await coverageService.GetCellsAsync(new CoverageCellsQuery { Limit = 5000 }, cancellationToken);
+        return Ok(geoJson);
     }
 }

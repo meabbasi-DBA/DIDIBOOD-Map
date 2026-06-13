@@ -1,9 +1,11 @@
 using Didibood.LocationAccess.Application;
+using Didibood.LocationAccess.Application.Configuration;
 using Didibood.LocationAccess.Infrastructure;
 using FluentValidation.AspNetCore;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.OpenApi.Models;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -16,12 +18,24 @@ builder.Host.UseSerilog((context, config) =>
         .Enrich.FromLogContext()
         .WriteTo.Console());
 
+builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection(ApiSettings.SectionName));
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Didibood Location Access API",
+        Version = "v1",
+        Description =
+            "Business Core integration: POST /api/location-access returns nearby POIs from PostGIS. " +
+            "See docs/api-business-core.md for curl examples."
+    });
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AdminPanel", policy =>
@@ -51,10 +65,15 @@ var app = builder.Build();
 
 app.UseSerilogRequestLogging();
 
-if (app.Environment.IsDevelopment())
+var apiSettings = app.Configuration.GetSection(ApiSettings.SectionName).Get<ApiSettings>() ?? new ApiSettings();
+if (app.Environment.IsDevelopment() || apiSettings.EnableSwagger)
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Location Access API v1");
+        options.DocumentTitle = "Didibood Location Access API";
+    });
 }
 
 app.UseCors("AdminPanel");

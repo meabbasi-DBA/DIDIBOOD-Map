@@ -1,3 +1,4 @@
+using Didibood.LocationAccess.Application.Abstractions;
 using Didibood.LocationAccess.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -19,9 +20,10 @@ public record ExecutionRow(
     int FailedRecords,
     int CellsProcessed,
     int CellsFailed,
-    string? ErrorSummary);
+    int TotalTasksPlanned,
+    string? LiveError);
 
-public class IndexModel(AppDbContext db) : PageModel
+public class IndexModel(AppDbContext db, ICrawlLiveTelemetry liveTelemetry) : PageModel
 {
     private const int PageSize = 20;
 
@@ -31,6 +33,7 @@ public class IndexModel(AppDbContext db) : PageModel
     public List<ExecutionRow> Executions { get; private set; } = [];
     public int TotalPages  { get; private set; }
     public int TotalCount  { get; private set; }
+    public bool HasActiveCrawl { get; private set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -57,11 +60,12 @@ public class IndexModel(AppDbContext db) : PageModel
         TotalPages = Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
         if (CurrentPage > TotalPages) CurrentPage = TotalPages;
 
-        Executions = await query
+        var rows = await query
             .OrderByDescending(x => x.e.StartedAt)
             .Skip((CurrentPage - 1) * PageSize)
             .Take(PageSize)
-            .Select(x => new ExecutionRow(
+            .Select(x => new
+            {
                 x.e.Id,
                 x.j.Name,
                 x.e.TriggeredBy,
@@ -75,7 +79,29 @@ public class IndexModel(AppDbContext db) : PageModel
                 x.e.FailedRecords,
                 x.e.CellsProcessed,
                 x.e.CellsFailed,
-                x.e.ErrorSummary))
+                x.e.TotalTasksPlanned
+            })
             .ToListAsync(cancellationToken);
+
+        HasActiveCrawl = rows.Any(r => r.Status is "running" or "queued")
+            || await db.CrawlJobExecutions.AnyAsync(e => e.Status == "running" || e.Status == "queued", cancellationToken);
+
+        Executions = rows.Select(x => new ExecutionRow(
+            x.Id,
+            x.Name,
+            x.TriggeredBy,
+            x.Status,
+            x.StartedAt,
+            x.EndedAt,
+            x.DurationMs,
+            x.RequestCount,
+            x.NewRecords,
+            x.UpdatedRecords,
+            x.FailedRecords,
+            x.CellsProcessed,
+            x.CellsFailed,
+            x.TotalTasksPlanned,
+            x.Status is "running" or "queued" ? liveTelemetry.GetLiveError(x.Id) : null))
+            .ToList();
     }
 }

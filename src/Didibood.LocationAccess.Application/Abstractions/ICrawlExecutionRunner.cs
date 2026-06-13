@@ -5,7 +5,7 @@ namespace Didibood.LocationAccess.Application.Abstractions;
 
 public interface ICrawlExecutionRunner
 {
-    Task<CrawlExecutionSummary> RunJobAsync(CrawlJob job, CancellationToken ct = default);
+    Task<CrawlExecutionSummary> RunJobAsync(CrawlJob job, Guid executionId, CancellationToken ct = default);
 
     Task<CrawlExecutionSummary> RunManualExecutionAsync(
         CrawlJobExecution execution,

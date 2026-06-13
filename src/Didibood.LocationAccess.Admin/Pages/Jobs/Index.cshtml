@@ -78,7 +78,7 @@
 
 @section Scripts {
 <script>
-    let pollSeconds = 5;
+    let pollSeconds = @(Model.HasActiveCrawl ? 3 : 5);
     const badge = document.getElementById('jobs-refresh-badge');
     const wrapper = document.getElementById('jobs-table-wrapper');
 
@@ -91,8 +91,10 @@
             });
             if (r.ok) wrapper.innerHTML = await r.text();
         } catch (_) {}
-        pollSeconds = 5;
+        pollSeconds = wrapper.querySelector('.table-primary') ? 3 : 5;
     }
+
+    pollJobs();
 
     setInterval(() => {
         pollSeconds--;

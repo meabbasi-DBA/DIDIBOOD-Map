@@ -5,15 +5,15 @@
 }
 @foreach (var row in Model.Executions)
 {
-    var statusClass = row.Status switch
-    {
-        "running"   => "table-primary",
-        "failed"    => "table-danger",
-        "cancelled" => "table-secondary",
-        _           => ""
-    };
+    var statusClass = row.Status is "running" or "queued" ? "table-primary" : "";
     <tr class="@statusClass">
-        <td class="fw-semibold small">@row.JobName</td>
+        <td class="fw-semibold small">
+            @row.JobName
+            @if (!string.IsNullOrEmpty(row.LiveError))
+            {
+                <small class="text-danger d-block">@row.LiveError</small>
+            }
+        </td>
         <td class="small text-muted">@row.TriggeredBy</td>
         <td>
             <span class="badge badge-@row.Status" style="font-size:.75rem">@row.Status</span>
@@ -25,7 +25,7 @@
                 var ts = TimeSpan.FromMilliseconds(row.DurationMs.Value);
                 @($"{(int)ts.TotalMinutes}m {ts.Seconds}s")
             }
-            else if (row.Status == "running")
+            else if (row.Status is "running" or "queued")
             {
                 var el = DateTimeOffset.UtcNow - row.StartedAt;
                 <span class="text-primary">@((int)el.TotalMinutes)m @el.Seconds&#x202F;s</span>
@@ -35,11 +35,11 @@
                 <span>—</span>
             }
         </td>
-        <td class="text-center small">@row.RequestCount</td>
-        <td class="text-center small text-success">@row.NewRecords</td>
-        <td class="text-center small text-warning">@row.UpdatedRecords</td>
-        <td class="text-center small text-danger">@row.FailedRecords</td>
-        <td class="text-center small">@row.CellsProcessed</td>
+        <td class="text-center small">@row.RequestCount.ToString("N0")</td>
+        <td class="text-center small text-success">@row.NewRecords.ToString("N0")</td>
+        <td class="text-center small text-warning">@row.UpdatedRecords.ToString("N0")</td>
+        <td class="text-center small text-danger">@row.CellsFailed.ToString("N0")</td>
+        <td class="text-center small">@((row.CellsProcessed + row.CellsFailed).ToString("N0"))</td>
     </tr>
 }
 @if (!Model.Executions.Any())

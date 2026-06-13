@@ -21,21 +21,22 @@
         <tbody>
             @foreach (var row in Model.Executions)
             {
-                <tr class="@(row.Status == "running" ? "table-primary" : "")">
+                var tasksDone = row.CellsProcessed + row.CellsFailed;
+                <tr class="@(row.Status is "running" or "queued" ? "table-primary" : "")">
                     <td>
                         <div class="fw-semibold">@row.JobName</div>
-                        @if (!string.IsNullOrEmpty(row.ErrorSummary))
+                        @if (!string.IsNullOrEmpty(row.LiveError))
                         {
-                            <small class="text-danger" title="@row.ErrorSummary">
-                                <i class="bi bi-exclamation-circle me-1"></i>
-                                @(row.ErrorSummary.Length > 40 ? row.ErrorSummary[..40] + "…" : row.ErrorSummary)
+                            <small class="text-danger d-block" title="@row.LiveError">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                @(row.LiveError.Length > 50 ? row.LiveError[..50] + "…" : row.LiveError)
                             </small>
                         }
                     </td>
                     <td class="small text-muted">@row.TriggeredBy</td>
                     <td>
                         <span class="badge badge-@row.Status d-flex align-items-center gap-1" style="width:fit-content">
-                            @if (row.Status == "running")
+                            @if (row.Status is "running" or "queued")
                             {
                                 <span class="spinner-grow spinner-grow-sm" role="status" style="width:.4rem;height:.4rem"></span>
                             }
@@ -62,7 +63,7 @@
                                 <span>@ts.Seconds&#x202F;s</span>
                             }
                         }
-                        else if (row.Status == "running")
+                        else if (row.Status is "running" or "queued")
                         {
                             var elapsed = DateTimeOffset.UtcNow - row.StartedAt;
                             <span class="text-primary">@((int)elapsed.TotalMinutes)m @elapsed.Seconds&#x202F;s</span>
@@ -72,12 +73,21 @@
                             <span class="text-muted">—</span>
                         }
                     </td>
-                    <td class="text-center">@row.RequestCount</td>
-                    <td class="text-center text-success fw-semibold">@row.NewRecords</td>
-                    <td class="text-center text-warning fw-semibold">@row.UpdatedRecords</td>
-                    <td class="text-center text-danger">@row.FailedRecords</td>
+                    <td class="text-center">@row.RequestCount.ToString("N0")</td>
+                    <td class="text-center text-success fw-semibold">@row.NewRecords.ToString("N0")</td>
+                    <td class="text-center text-warning fw-semibold">@row.UpdatedRecords.ToString("N0")</td>
+                    <td class="text-center text-danger fw-semibold" title="خطای API/سلول@(row.FailedRecords > 0 ? $" — POI: {row.FailedRecords}" : "")">
+                        @row.CellsFailed.ToString("N0")
+                    </td>
                     <td class="text-center small text-muted">
-                        @row.CellsProcessed / @(row.CellsProcessed + row.CellsFailed)
+                        @if (row.TotalTasksPlanned > 0)
+                        {
+                            <span>@tasksDone.ToString("N0") / @row.TotalTasksPlanned.ToString("N0")</span>
+                        }
+                        else
+                        {
+                            <span>@row.CellsProcessed.ToString("N0")</span>
+                        }
                     </td>
                 </tr>
             }

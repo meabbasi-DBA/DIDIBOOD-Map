@@ -79,14 +79,35 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Crawl Job پایه</label>
-                        <select name="BaseJobId" class="form-select form-select-sm">
-                            <option value="">— انتخاب کنید —</option>
+                        <select name="BaseJobIdRaw" class="form-select form-select-sm">
                             @foreach (var job in Model.AvailableJobs)
                             {
-                                <option value="@job.Id">@job.Name (@job.JobType)</option>
+                                var label = $"{job.Name} ({job.JobType})";
+                                if (!job.IsEnabled)
+                                {
+                                    label += " — غیرفعال";
+                                }
+                                if (Model.DefaultJobId == job.Id)
+                                {
+                                    <option value="@job.Id" selected>@label</option>
+                                }
+                                else
+                                {
+                                    <option value="@job.Id">@label</option>
+                                }
                             }
                         </select>
-                        <div class="form-text">اگر انتخاب نکنید، اولین کار فعال استفاده می‌شود</div>
+                        @if (!Model.AvailableJobs.Any())
+                        {
+                            <div class="form-text text-danger">هیچ Crawl Job تعریف نشده است.</div>
+                        }
+                        else
+                        {
+                            <div class="form-text">
+                                هر سه کار قابل انتخاب است. اجرا فوری است — Cron فقط برای زمان‌بندی خودکار (Scheduler) اعمال می‌شود.
+                                کار <code>tehran-manual</code> باید در Scheduler فعال باشد.
+                            </div>
+                        }
                     </div>
 
                     <button type="submit" class="btn btn-success w-100">

@@ -42,10 +42,35 @@ public static class H3CellGeometry
         };
 
         var polygon = GeometryFactory.CreatePolygon(coords);
+        return PolyfillPolygon(polygon, resolution);
+    }
+
+    public static IReadOnlyList<long> PolyfillPolygon(Polygon polygon, int resolution)
+    {
         return polygon.Fill(resolution)
             .Select(i => (long)(ulong)i)
             .Distinct()
             .OrderBy(i => i)
             .ToList();
+    }
+
+    /// <summary>
+    /// Polyfills each district polygon at <paramref name="resolution"/> and keeps cells whose centroids
+    /// lie inside the municipality union (no rectangular bbox bleed).
+    /// </summary>
+    public static IReadOnlyList<long> PolyfillMunicipality(TehranMunicipalityBoundary boundary, int resolution)
+    {
+        var indices = new HashSet<long>();
+
+        foreach (var district in boundary.Districts)
+        {
+            foreach (var index in district.Fill(resolution).Select(i => (long)(ulong)i))
+            {
+                if (boundary.ContainsCentroid(index))
+                    indices.Add(index);
+            }
+        }
+
+        return indices.OrderBy(i => i).ToList();
     }
 }

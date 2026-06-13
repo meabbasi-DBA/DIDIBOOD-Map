@@ -15,10 +15,10 @@
 
 @if (!Model.HasWebMapKey)
 {
-    <div class="alert alert-warning py-2 small" dir="rtl">
-        <i class="bi bi-exclamation-triangle me-1"></i>
-        کلید <strong>نقشه وب نشان</strong> تنظیم نشده است — نقشه با OpenStreetMap نمایش داده می‌شود.
-        مقدار <code>Neshan:WebMapKey</code> را در تنظیمات Admin یا متغیر محیطی <code>Neshan__WebMapKey</code> قرار دهید.
+    <div class="alert alert-info py-2 small" dir="rtl">
+        <i class="bi bi-info-circle me-1"></i>
+        نقشه پوشش از <strong>OpenStreetMap</strong> استفاده می‌کند تا لایه‌های H3 به‌درستی نمایش داده شوند.
+        کلید <code>Neshan:WebMapKey</code> فقط برای صفحات دیگر Admin کاربرد دارد.
     </div>
 }
 
@@ -91,12 +91,12 @@
 </div>
 
 @section Styles {
-    <link rel="stylesheet" href="https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="~/css/coverage-monitor.css" asp-append-version="true" />
 }
 
 @section Scripts {
-    <script src="https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         window.coverageConfig = {
             apiBase: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApiBaseUrl)),
@@ -106,7 +106,9 @@
                 maxLat: @Model.TehranBounds.MaxLat.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 minLng: @Model.TehranBounds.MinLng.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 maxLng: @Model.TehranBounds.MaxLng.ToString(System.Globalization.CultureInfo.InvariantCulture)
-            }
+            },
+            gridResolution: @Model.GridResolution,
+            boundaryMode: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.BoundaryMode))
         };
     </script>
     <script src="~/js/coverage-monitor.js" asp-append-version="true"></script>

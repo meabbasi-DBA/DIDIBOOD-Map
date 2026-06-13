@@ -11,9 +11,15 @@ public sealed class CrawlExecutionRunner(
     ICrawlPlanner planner,
     IServiceScopeFactory scopeFactory,
     ISystemConfigurationStore configStore,
+    ICrawlLiveTelemetry liveTelemetry,
     ILogger<CrawlExecutionRunner> logger) : ICrawlExecutionRunner
 {
-    public async Task<CrawlExecutionSummary> RunJobAsync(CrawlJob job, CancellationToken ct = default)
+    private const int ProgressFlushInterval = 1;
+
+    public async Task<CrawlExecutionSummary> RunJobAsync(
+        CrawlJob job,
+        Guid executionId,
+        CancellationToken ct = default)
     {
         var staleOnly = job.Name.Contains("stale", StringComparison.OrdinalIgnoreCase);
         var plan = new CrawlPlanRequest(
@@ -22,7 +28,12 @@ public sealed class CrawlExecutionRunner(
             StaleOnly: staleOnly);
 
         var parallelism = await configStore.GetAsync("crawl.parallelism", 2, ct);
-        return await ExecutePlanAsync(plan, Math.Min(parallelism, job.MaxParallelCells), job.Id, ct);
+        return await ExecutePlanAsync(
+            plan,
+            Math.Min(parallelism, job.MaxParallelCells),
+            job.Id,
+            executionId,
+            ct);
     }
 
     public async Task<CrawlExecutionSummary> RunManualExecutionAsync(
@@ -32,7 +43,12 @@ public sealed class CrawlExecutionRunner(
     {
         var plan = ParseManualPlan(execution.TriggeredBy, job);
         var parallelism = await configStore.GetAsync("crawl.parallelism", 2, ct);
-        return await ExecutePlanAsync(plan, Math.Min(parallelism, job.MaxParallelCells), job.Id, ct);
+        return await ExecutePlanAsync(
+            plan,
+            Math.Min(parallelism, job.MaxParallelCells),
+            job.Id,
+            execution.Id,
+            ct);
     }
 
     public static CrawlPlanRequest ParseManualPlan(string triggeredBy, CrawlJob job)
@@ -57,23 +73,30 @@ public sealed class CrawlExecutionRunner(
         CrawlPlanRequest plan,
         int maxParallelism,
         Guid jobId,
+        Guid executionId,
         CancellationToken ct)
     {
         var cells = await planner.PlanAsync(plan, ct);
         var summary = new CrawlExecutionSummary();
         var effectiveParallelism = Math.Max(1, maxParallelism);
+        var totalTasks = cells.Count;
+        var tasksCompleted = 0;
 
         logger.LogInformation(
-            "Crawl plan for job {JobId}: {TaskCount} tasks, parallelism={Parallelism}",
+            "Crawl plan for job {JobId} execution {ExecutionId}: {TaskCount} tasks, parallelism={Parallelism}",
             jobId,
+            executionId,
             cells.Count,
             effectiveParallelism);
 
         if (cells.Count == 0)
         {
             logger.LogWarning("Crawl plan for job {JobId} produced zero tasks", jobId);
+            await FlushProgressAsync(executionId, summary, totalTasks, ct);
             return summary;
         }
+
+        await FlushProgressAsync(executionId, summary, totalTasks, ct);
 
         using var semaphore = new SemaphoreSlim(effectiveParallelism, effectiveParallelism);
 
@@ -82,6 +105,8 @@ public sealed class CrawlExecutionRunner(
             await semaphore.WaitAsync(ct);
             try
             {
+                await EnsureRunningAsync(executionId, ct);
+
                 using var scope = scopeFactory.CreateScope();
                 var executor = scope.ServiceProvider.GetRequiredService<ICrawlExecutor>();
                 var h3Coverage = scope.ServiceProvider.GetRequiredService<IH3CoverageRepository>();
@@ -97,6 +122,7 @@ public sealed class CrawlExecutionRunner(
                     result.Error,
                     ct);
 
+                var shouldFlush = false;
                 lock (summary)
                 {
                     summary.TotalRequests += result.RequestCount;
@@ -107,18 +133,52 @@ public sealed class CrawlExecutionRunner(
                     if (result.Error is null)
                         summary.CellsProcessed++;
                     else
+                    {
                         summary.CellsFailed++;
+                        summary.LastLiveError = result.Error;
+                    }
+
+                    tasksCompleted++;
+                    shouldFlush = tasksCompleted % ProgressFlushInterval == 0;
                 }
+
+                if (shouldFlush)
+                    await FlushProgressAsync(executionId, summary, totalTasks, ct);
             }
-            catch (NeshanQuotaExceededException)
+            catch (CrawlExecutionStoppedException)
             {
-                lock (summary) { summary.CellsFailed++; }
+                throw;
+            }
+            catch (NeshanQuotaExceededException ex)
+            {
+                var shouldFlush = false;
+                lock (summary)
+                {
+                    summary.CellsFailed++;
+                    summary.LastLiveError = ex.Message;
+                    tasksCompleted++;
+                    shouldFlush = true;
+                }
+
+                if (shouldFlush)
+                    await FlushProgressAsync(executionId, summary, totalTasks, ct);
                 throw;
             }
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Cell H3={H3Index} failed during job {JobId}", cell.H3Index, jobId);
-                lock (summary) { summary.CellsFailed++; }
+                var shouldFlush = false;
+                lock (summary)
+                {
+                    summary.CellsFailed++;
+                    summary.TotalRequests++;
+                    summary.LastLiveError = ex.Message;
+                    tasksCompleted++;
+                    shouldFlush = true;
+                }
+
+                if (shouldFlush)
+                    await FlushProgressAsync(executionId, summary, totalTasks, ct);
             }
             finally
             {
@@ -126,7 +186,58 @@ public sealed class CrawlExecutionRunner(
             }
         });
 
-        await Task.WhenAll(tasks);
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (CrawlExecutionStoppedException)
+        {
+            await FlushProgressAsync(executionId, summary, totalTasks, CancellationToken.None);
+            throw;
+        }
+
+        liveTelemetry.Clear(executionId);
         return summary;
+    }
+
+    private async Task EnsureRunningAsync(Guid executionId, CancellationToken ct)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var jobRepo = scope.ServiceProvider.GetRequiredService<ICrawlJobRepository>();
+        var status = await jobRepo.GetExecutionStatusAsync(executionId, ct);
+
+        if (status is "cancelled" or "paused")
+            throw new CrawlExecutionStoppedException(status);
+    }
+
+    private async Task FlushProgressAsync(
+        Guid executionId,
+        CrawlExecutionSummary summary,
+        int totalTasksPlanned,
+        CancellationToken ct)
+    {
+        CrawlExecutionSummary snapshot;
+        string? liveError;
+        lock (summary)
+        {
+            snapshot = new CrawlExecutionSummary
+            {
+                TotalRequests = summary.TotalRequests,
+                NewRecords = summary.NewRecords,
+                UpdatedRecords = summary.UpdatedRecords,
+                FailedRecords = summary.FailedRecords,
+                CellsProcessed = summary.CellsProcessed,
+                CellsFailed = summary.CellsFailed,
+                LastLiveError = summary.LastLiveError
+            };
+            liveError = summary.LastLiveError;
+        }
+
+        if (!string.IsNullOrWhiteSpace(liveError))
+            liveTelemetry.SetLiveError(executionId, liveError);
+
+        using var scope = scopeFactory.CreateScope();
+        var jobRepo = scope.ServiceProvider.GetRequiredService<ICrawlJobRepository>();
+        await jobRepo.UpdateProgressAsync(executionId, snapshot, totalTasksPlanned, ct);
     }
 }

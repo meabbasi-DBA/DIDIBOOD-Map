@@ -1,13 +1,16 @@
 (function () {
     const cfg = window.coverageConfig || {};
     const apiBase = (cfg.apiBase || window.location.origin || '').replace(/\/$/, '');
-    const webMapKey = cfg.webMapKey || '';
     const tehranBounds = cfg.tehranBounds || {
-        minLat: 35.48,
-        maxLat: 35.92,
-        minLng: 51.08,
-        maxLng: 51.65
+        minLat: 35.50,
+        maxLat: 35.88,
+        minLng: 51.10,
+        maxLng: 51.62
     };
+    const gridResolution = cfg.gridResolution || 7;
+    const boundaryMode = cfg.boundaryMode || 'municipality';
+
+    let boundaryLayer;
 
     const statusColors = {
         pending: '#6c757d',
@@ -27,6 +30,8 @@
     let cellLayer;
     let centroidLayer;
     let heatmapLayer;
+    let mapReady = false;
+    let loadSeq = 0;
 
     function tehranLatLngBounds() {
         return L.latLngBounds(
@@ -36,7 +41,18 @@
     }
 
     function setTehranView() {
+        if (!map) return;
         map.fitBounds(tehranLatLngBounds(), { padding: [24, 24], maxZoom: 12 });
+    }
+
+    function fitCellBounds() {
+        if (!map || !cellLayer) return;
+        const bounds = cellLayer.getBounds();
+        if (bounds.isValid()) {
+            map.fitBounds(bounds.pad(0.02), { padding: [24, 24], maxZoom: 12 });
+        } else {
+            setTehranView();
+        }
     }
 
     function initMap() {
@@ -45,22 +61,12 @@
             (tehranBounds.minLng + tehranBounds.maxLng) / 2
         ];
 
-        if (webMapKey) {
-            map = new L.Map('coverage-map', {
-                key: webMapKey,
-                maptype: 'dreamy',
-                poi: false,
-                traffic: false,
-                center,
-                zoom: 11
-            });
-        } else {
-            map = L.map('coverage-map', { center, zoom: 11, zoomControl: true });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(map);
-        }
+        // Standard Leaflet only — Neshan L.Map rejects L.geoJSON overlays (addLayer is not a function).
+        map = L.map('coverage-map', { center, zoom: 11, zoomControl: true });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
 
         const legend = L.control({ position: 'bottomleft' });
         legend.onAdd = function () {
@@ -77,6 +83,7 @@
 
         cellLayer = L.geoJSON(null, {
             style: feature => {
+                if (feature.geometry?.type === 'Point') return {};
                 const status = feature.properties?.status || 'pending';
                 const color = statusColors[status] || '#0d6efd';
                 return {
@@ -86,12 +93,25 @@
                     fillOpacity: 0.28
                 };
             },
+            pointToLayer: (feature, latlng) => {
+                const props = feature.properties || {};
+                const status = props.status || 'pending';
+                const color = props.isRefined ? '#6610f2' : (statusColors[status] || '#0d6efd');
+                return L.circleMarker(latlng, {
+                    radius: props.isRefined ? 5 : 3,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: props.isRefined ? 1.5 : 1,
+                    fillOpacity: 0.95
+                });
+            },
             onEachFeature: (feature, layer) => {
                 const props = feature.properties || {};
                 const status = props.status || 'pending';
                 const label = statusLabels[status] || status;
+                const refined = props.isRefined ? ' (مرز)' : '';
                 layer.bindTooltip(
-                    `<strong>${label}</strong><br/>POI: ${props.poiCount ?? 0}<br/>H3: ${props.h3Index ?? '—'}`,
+                    `<strong>${label}${refined}</strong><br/>POI: ${props.poiCount ?? 0}<br/>H3: ${props.h3Index ?? '—'}`,
                     { sticky: true, direction: 'top', className: 'coverage-cell-tooltip' }
                 );
                 layer.on('click', () => {
@@ -101,25 +121,77 @@
         }).addTo(map);
 
         centroidLayer = L.layerGroup().addTo(map);
-
         heatmapLayer = L.layerGroup().addTo(map);
 
-        setTimeout(() => map.invalidateSize(), 0);
-        setTehranView();
+        map.whenReady(() => {
+            mapReady = true;
+            map.invalidateSize();
+            loadBoundary().then(() => reload());
+        });
+    }
+
+    async function loadBoundary() {
+        if (boundaryMode !== 'municipality') return null;
+
+        try {
+            const res = await fetch(`${apiBase}/api/coverage/boundary`);
+            if (!res.ok) return null;
+            const geoJson = await res.json();
+            if (boundaryLayer) {
+                map.removeLayer(boundaryLayer);
+            }
+            boundaryLayer = L.geoJSON(geoJson, {
+                style: {
+                    color: '#0d6efd',
+                    weight: 2,
+                    fillColor: '#0d6efd',
+                    fillOpacity: 0.04
+                },
+                interactive: false
+            }).addTo(map);
+            return boundaryLayer;
+        } catch (err) {
+            console.error('Boundary load failed', err);
+            return null;
+        }
+    }
+
+    function fitMapToBoundaryOrCells() {
+        if (boundaryLayer) {
+            const bounds = boundaryLayer.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
+                return;
+            }
+        }
+        fitCellBounds();
     }
 
     async function loadSummary() {
         const el = document.getElementById('coverage-summary');
         if (!el) return;
 
-        const res = await fetch(`${apiBase}/api/coverage/summary`);
-        if (!res.ok) return;
+        try {
+            const res = await fetch(`${apiBase}/api/coverage/summary`);
+            if (!res.ok) return;
 
-        const s = await res.json();
-        el.innerHTML = `
-            <div><strong>${s.coveragePercent}%</strong> پوشش موفق</div>
-            <div>${s.successCells}/${s.totalCells} سلول — کهنه: ${s.staleCells} — ناموفق: ${s.failedCells}</div>
-        `;
+            const s = await res.json();
+            let debugLine = '';
+            try {
+                const dbgRes = await fetch(`${apiBase}/api/coverage/debug`);
+                if (dbgRes.ok) {
+                    const d = await dbgRes.json();
+                    debugLine = `<div class="text-muted">${d.sourceMode} · ${d.baseCells} سلول + ${d.virtualCenters} مرزی · پوشش تخمینی ${d.estimatedCoveragePercent}%</div>`;
+                }
+            } catch (_) { /* optional */ }
+            el.innerHTML = `
+                <div><strong>${s.coveragePercent}%</strong> پوشش موفق</div>
+                <div>${s.successCells}/${s.totalCells} سلول — کهنه: ${s.staleCells} — ناموفق: ${s.failedCells}</div>
+                ${debugLine}
+            `;
+        } catch (err) {
+            console.error('Coverage summary failed', err);
+        }
     }
 
     function buildParams() {
@@ -129,11 +201,14 @@
         const category = document.getElementById('filter-category').value;
         const params = new URLSearchParams();
 
-        params.set('resolution', '8');
-        params.set('minLat', String(tehranBounds.minLat));
-        params.set('maxLat', String(tehranBounds.maxLat));
-        params.set('minLng', String(tehranBounds.minLng));
-        params.set('maxLng', String(tehranBounds.maxLng));
+        params.set('resolution', String(gridResolution));
+
+        if (boundaryMode !== 'municipality') {
+            params.set('minLat', String(tehranBounds.minLat));
+            params.set('maxLat', String(tehranBounds.maxLat));
+            params.set('minLng', String(tehranBounds.minLng));
+            params.set('maxLng', String(tehranBounds.maxLng));
+        }
 
         if (status) params.set('status', status);
         if (maxAge && Number(maxAge) > 0) params.set('maxAgeDays', maxAge);
@@ -155,6 +230,7 @@
         centroidLayer.clearLayers();
 
         features.forEach(feature => {
+            if (feature.geometry?.type === 'Point') return;
             const props = feature.properties || {};
             const lat = props.centroidLat;
             const lng = props.centroidLng;
@@ -173,79 +249,106 @@
     }
 
     async function loadCells() {
+        if (!mapReady) return;
+
+        const seq = ++loadSeq;
         const params = buildParams();
-        params.set('limit', '2000');
+        params.set('limit', '5000');
 
-        const res = await fetch(`${apiBase}/api/coverage/cells?${params}`);
-        if (!res.ok) return;
+        try {
+            const res = await fetch(`${apiBase}/api/coverage/cells?${params}`);
+            if (!res.ok) {
+                console.error('Coverage cells request failed', res.status);
+                return;
+            }
 
-        const geoJson = await res.json();
-        let features = geoJson.features || [];
+            const geoJson = await res.json();
+            if (seq !== loadSeq) return;
 
-        const minPoi = document.getElementById('filter-min-poi').value;
-        if (minPoi && Number(minPoi) > 0) {
-            features = features.filter(f => (f.properties?.poiCount || 0) >= Number(minPoi));
-        }
+            let features = geoJson.features || [];
 
-        cellLayer.clearLayers();
-        centroidLayer.clearLayers();
-        heatmapLayer.clearLayers();
+            const minPoi = document.getElementById('filter-min-poi').value;
+            if (minPoi && Number(minPoi) > 0) {
+                features = features.filter(f => (f.properties?.poiCount || 0) >= Number(minPoi));
+            }
 
-        if (features.length > 0) {
-            cellLayer.addData({ type: 'FeatureCollection', features });
-            addCentroidMarkers(features);
+            cellLayer.clearLayers();
+            centroidLayer.clearLayers();
+            heatmapLayer.clearLayers();
 
-            if (hasActiveFilters()) {
-                const bounds = cellLayer.getBounds();
-                if (bounds.isValid()) {
-                    map.fitBounds(bounds.pad(0.05), { padding: [24, 24], maxZoom: 13 });
+            if (features.length > 0) {
+                cellLayer.addData({ type: 'FeatureCollection', features });
+                addCentroidMarkers(features);
+
+                if (hasActiveFilters()) {
+                    const bounds = cellLayer.getBounds();
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds.pad(0.05), { padding: [24, 24], maxZoom: 13 });
+                    }
+                } else {
+                    fitMapToBoundaryOrCells();
                 }
             } else {
-                setTehranView();
+                fitMapToBoundaryOrCells();
             }
-        } else {
-            setTehranView();
+        } catch (err) {
+            console.error('Coverage cells failed', err);
         }
     }
 
     async function loadHeatmap() {
+        if (!mapReady) return;
+
+        const seq = ++loadSeq;
         const params = buildParams();
-        const res = await fetch(`${apiBase}/api/coverage/heatmap?${params}`);
-        if (!res.ok) return;
 
-        const points = await res.json();
-        cellLayer.clearLayers();
-        centroidLayer.clearLayers();
-        heatmapLayer.clearLayers();
+        try {
+            const res = await fetch(`${apiBase}/api/coverage/heatmap?${params}`);
+            if (!res.ok) return;
 
-        const bounds = L.latLngBounds([]);
-        points.forEach(p => {
-            const radius = Math.min(24, 6 + Math.sqrt(p.weight));
-            const color = statusColors[p.status] || '#0d6efd';
-            const circle = L.circleMarker([p.lat, p.lng], {
-                radius,
-                fillColor: color,
-                color: '#fff',
-                weight: 1,
-                fillOpacity: 0.6
+            const points = await res.json();
+            if (seq !== loadSeq) return;
+
+            cellLayer.clearLayers();
+            centroidLayer.clearLayers();
+            heatmapLayer.clearLayers();
+
+            const bounds = L.latLngBounds([]);
+            points.forEach(p => {
+                const radius = Math.min(24, 6 + Math.sqrt(p.weight));
+                const color = statusColors[p.status] || '#0d6efd';
+                const circle = L.circleMarker([p.lat, p.lng], {
+                    radius,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 1,
+                    fillOpacity: 0.6
+                });
+                circle.bindTooltip(`POI: ${p.weight}`, { direction: 'top' });
+                circle.on('click', () => {
+                    if (p.h3Index) showCellDetail(p.h3Index);
+                });
+                heatmapLayer.addLayer(circle);
+                bounds.extend([p.lat, p.lng]);
             });
-            circle.bindTooltip(`POI: ${p.weight}`, { direction: 'top' });
-            circle.on('click', () => {
-                if (p.h3Index) showCellDetail(p.h3Index);
-            });
-            heatmapLayer.addLayer(circle);
-            bounds.extend([p.lat, p.lng]);
-        });
 
-        if (bounds.isValid() && hasActiveFilters()) {
-            map.fitBounds(bounds.pad(0.05), { padding: [24, 24], maxZoom: 13 });
-        } else {
-            setTehranView();
+            if (bounds.isValid() && hasActiveFilters()) {
+                map.fitBounds(bounds.pad(0.05), { padding: [24, 24], maxZoom: 13 });
+            } else if (bounds.isValid()) {
+                map.fitBounds(bounds.pad(0.02), { padding: [24, 24], maxZoom: 12 });
+            } else {
+                setTehranView();
+            }
+        } catch (err) {
+            console.error('Coverage heatmap failed', err);
         }
     }
 
     async function reload() {
         await loadSummary();
+        if (!boundaryLayer && boundaryMode === 'municipality') {
+            await loadBoundary();
+        }
         const mode = document.getElementById('view-mode').value;
         if (mode === 'heatmap') {
             await loadHeatmap();
@@ -282,5 +385,4 @@
     document.getElementById('view-mode').addEventListener('change', reload);
 
     initMap();
-    reload();
 })();

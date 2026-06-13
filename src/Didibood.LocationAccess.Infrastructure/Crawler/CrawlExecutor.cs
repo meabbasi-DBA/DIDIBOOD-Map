@@ -17,7 +17,22 @@ public sealed class CrawlExecutor(
 
     public async Task<CrawlExecutionResult> ExecuteAsync(CrawlCell cell, CancellationToken ct = default)
     {
-        var (response, requestCount) = await CallWithRetryAsync(cell, ct);
+        NeshanSearchResponse? response;
+        int requestCount;
+        try
+        {
+            (response, requestCount) = await CallWithRetryAsync(cell, ct);
+        }
+        catch (NeshanException ex) when (ex is not NeshanQuotaExceededException)
+        {
+            return new CrawlExecutionResult(
+                NewRecords: 0,
+                UpdatedRecords: 0,
+                FailedRecords: 0,
+                RequestCount: 1,
+                Error: ex.Message);
+        }
+
         if (response is null)
         {
             // Quota exceeded — caller should stop dispatching further cells.

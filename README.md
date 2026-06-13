@@ -47,10 +47,14 @@ copy src\Didibood.LocationAccess.API\appsettings.Development.example.json src\Di
 # 5. Run API
 dotnet run --project src\Didibood.LocationAccess.API
 
-# 5. Test
+# 5. Test (Business Core endpoint)
 curl -X POST http://localhost:5080/api/location-access \
   -H "Content-Type: application/json" \
   -d "{\"latitude\":35.6892,\"longitude\":51.389,\"radius\":2000}"
+
+# API discovery + Swagger
+curl http://localhost:5080/api
+# http://localhost:5080/swagger
 ```
 
 ## Solution structure
@@ -67,6 +71,8 @@ curl -X POST http://localhost:5080/api/location-access \
 
 ## Documentation
 
+- [**Business Core API (endpoints + curl)**](docs/api-business-core.md)
+- [Tehran H3 crawl grid](docs/tehran-h3-grid.md)
 - [Phase 1 Architecture](docs/phase-1-architecture-review.md)
 - [Phase 2 Database](docs/phase-2-database-design.md)
 - [Phase 3 API Validation](docs/phase-3-api-validation.md)
