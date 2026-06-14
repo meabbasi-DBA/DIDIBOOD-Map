@@ -1,3 +1,5 @@
+using Didibood.LocationAccess.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,6 +10,8 @@ namespace Didibood.LocationAccess.Infrastructure.Persistence.Migrations;
 /// Tightens Tehran bounds, sets optimized search radius, and clears the legacy res-8 grid
 /// so startup reseeds ~373 cells at resolution 7 (~10k Neshan requests/crawl).
 /// </summary>
+[DbContext(typeof(AppDbContext))]
+[Migration("20260614120000_TightenTehranH3Grid")]
 public partial class TightenTehranH3Grid : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

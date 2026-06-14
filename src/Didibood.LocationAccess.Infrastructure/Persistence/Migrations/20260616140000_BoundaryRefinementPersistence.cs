@@ -1,3 +1,5 @@
+using Didibood.LocationAccess.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -7,6 +9,8 @@ namespace Didibood.LocationAccess.Infrastructure.Persistence.Migrations;
 /// <summary>
 /// Ensures boundary refinement config exists and triggers one-time grid reseed.
 /// </summary>
+[DbContext(typeof(AppDbContext))]
+[Migration("20260616140000_BoundaryRefinementPersistence")]
 public partial class BoundaryRefinementPersistence : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

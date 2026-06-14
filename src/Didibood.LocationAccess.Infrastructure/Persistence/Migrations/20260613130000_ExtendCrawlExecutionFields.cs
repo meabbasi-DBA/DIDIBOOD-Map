@@ -1,45 +1,34 @@
+using Didibood.LocationAccess.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Didibood.LocationAccess.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(AppDbContext))]
+[Migration("20260613130000_ExtendCrawlExecutionFields")]
 public partial class ExtendCrawlExecutionFields : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.AddColumn<int>(
-            name: "total_tasks_planned",
-            table: "crawl_job_executions",
-            type: "integer",
-            nullable: false,
-            defaultValue: 0);
+        migrationBuilder.Sql("""
+            ALTER TABLE crawl_job_executions
+                ADD COLUMN IF NOT EXISTS total_tasks_planned integer NOT NULL DEFAULT 0;
 
-        migrationBuilder.AlterColumn<string>(
-            name: "triggered_by",
-            table: "crawl_job_executions",
-            type: "character varying(256)",
-            maxLength: 256,
-            nullable: false,
-            oldClrType: typeof(string),
-            oldType: "character varying(50)",
-            oldMaxLength: 50);
+            ALTER TABLE crawl_job_executions
+                ALTER COLUMN triggered_by TYPE character varying(256);
+            """);
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.DropColumn(
-            name: "total_tasks_planned",
-            table: "crawl_job_executions");
+        migrationBuilder.Sql("""
+            ALTER TABLE crawl_job_executions
+                DROP COLUMN IF EXISTS total_tasks_planned;
 
-        migrationBuilder.AlterColumn<string>(
-            name: "triggered_by",
-            table: "crawl_job_executions",
-            type: "character varying(50)",
-            maxLength: 50,
-            nullable: false,
-            oldClrType: typeof(string),
-            oldType: "character varying(256)",
-            oldMaxLength: 256);
+            ALTER TABLE crawl_job_executions
+                ALTER COLUMN triggered_by TYPE character varying(50);
+            """);
     }
 }

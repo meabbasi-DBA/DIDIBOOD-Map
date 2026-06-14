@@ -80,7 +80,7 @@ for i in $(seq 1 30); do
 done
 
 echo "==> Starting API (migrations + seed)..."
-"${COMPOSE[@]}" up -d api
+"${COMPOSE[@]}" up -d --force-recreate api
 for i in $(seq 1 60); do
   if curl -sf --max-time 3 http://127.0.0.1:5080/health/live >/dev/null 2>&1; then
     echo "    API ready (attempt ${i})"
@@ -95,7 +95,7 @@ for i in $(seq 1 60); do
 done
 
 echo "==> Starting worker + admin..."
-"${COMPOSE[@]}" up -d worker admin
+"${COMPOSE[@]}" up -d --force-recreate worker admin
 
 echo "==> Nginx vhost for ${MAP_SERVER_NAMES}..."
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx 2>/dev/null || true

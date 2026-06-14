@@ -1,3 +1,5 @@
+using Didibood.LocationAccess.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -7,6 +9,8 @@ namespace Didibood.LocationAccess.Infrastructure.Persistence.Migrations;
 /// <summary>
 /// Adds municipality_mode flag, persists boundary config, clears legacy bbox grid.
 /// </summary>
+[DbContext(typeof(AppDbContext))]
+[Migration("20260615130000_MunicipalityBoundaryGrid")]
 public partial class MunicipalityBoundaryGrid : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

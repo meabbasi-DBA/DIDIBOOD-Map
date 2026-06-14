@@ -54,7 +54,9 @@ public sealed class DatabaseBootstrapper(
 
     public async Task MigrateAndSeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
+        await SchemaCompatibility.EnsureH3CoverageColumnsAsync(db, cancellationToken);
         await db.Database.MigrateAsync(cancellationToken);
+        await SchemaCompatibility.EnsureH3CoverageColumnsAsync(db, cancellationToken);
         await DbSeeder.SeedAsync(db, cancellationToken);
         await H3GridSeeder.EnsureTargetGridAsync(db, logger, cancellationToken);
     }

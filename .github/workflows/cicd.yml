@@ -56,7 +56,6 @@ jobs:
   deploy:
     name: Deploy production
     needs: quality
-    continue-on-error: true
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
