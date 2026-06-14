@@ -18,6 +18,7 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
 
 RUN dotnet restore src/Didibood.LocationAccess.API/Didibood.LocationAccess.API.csproj --disable-parallel
 
+COPY data/ ./data/
 COPY src/ ./src/
 
 RUN dotnet publish src/Didibood.LocationAccess.API/Didibood.LocationAccess.API.csproj \
