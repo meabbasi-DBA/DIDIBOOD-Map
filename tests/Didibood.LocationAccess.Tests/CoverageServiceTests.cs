@@ -67,6 +67,7 @@ public class CoverageServiceTests
             Resolution = 8,
             Status = status,
             PoiCount = 3,
+            MunicipalityMode = true,
             CreatedAt = now,
             UpdatedAt = now,
             LastSuccessAt = status == "success" ? now : null
