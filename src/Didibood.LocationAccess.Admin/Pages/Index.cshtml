@@ -200,6 +200,20 @@
                     <span><span class="badge bg-warning">●</span> Stale</span>
                     <span><span class="badge bg-secondary">●</span> Pending</span>
                 </div>
+                <div class="row g-2 mt-3 small text-center" dir="rtl">
+                    <div class="col">
+                        <div class="text-muted">Crawled</div>
+                        <div class="fw-semibold" id="stat-h3-crawled">@Model.H3Crawled.ToString("N0")</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted">Remaining</div>
+                        <div class="fw-semibold" id="stat-h3-remaining">@Model.H3Remaining.ToString("N0")</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted">Success rate</div>
+                        <div class="fw-semibold" id="stat-h3-success-rate">@Model.H3SuccessRate.ToString("N1")%</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -247,6 +261,98 @@
                     }
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time crawl operations -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">وضعیت زنده Crawl</div>
+            <div class="card-body small" dir="rtl">
+                <div><strong>Scheduler:</strong> <span id="crawl-scheduler-state">@Model.SchedulerState</span></div>
+                <div><strong>API this hour:</strong> <span id="crawl-api-used">@Model.ApiCallsUsedThisHour</span> / @Model.ApiCallLimitPerHour</div>
+                <div><strong>Remaining:</strong> <span id="crawl-api-remaining">@Model.ApiCallsRemainingThisHour</span></div>
+                <hr />
+                <div><strong>Current Running Grid Number:</strong> <span id="crawl-current-grid">@(Model.CurrentRunningGridNumber?.ToString() ?? "—")</span></div>
+                <div class="text-muted" id="crawl-current-grid-detail"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">۵ Grid بعدی</div>
+            <div class="card-body small" dir="rtl">
+                <div id="crawl-next-grids">
+                    @foreach (var grid in Model.NextQueuedGrids)
+                    {
+                        <div>Grid #@(grid.GridNumber?.ToString() ?? "—") — H3 @grid.H3Index — @grid.Priority</div>
+                    }
+                    @if (!Model.NextQueuedGrids.Any())
+                    {
+                        <span class="text-muted">هیچ Grid واجدی یافت نشد.</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent fw-semibold" dir="rtl">آخرین Crawl</div>
+            <div class="card-body small" dir="rtl" id="crawl-last-timeline">
+                @if (Model.LastCrawl is not null)
+                {
+                    <div>Last Crawled Grid Number: #@(Model.LastCrawl.GridNumber?.ToString() ?? "—") — H3 @Model.LastCrawl.H3Index</div>
+                    <div>Last Crawled Datetime: @Model.LastCrawl.Timestamp.ToString("yyyy-MM-dd HH:mm:ss") UTC</div>
+                    <div>Duration: @(Model.LastCrawl.DurationMs?.ToString() ?? "—") ms</div>
+                    <div>Status: @Model.LastCrawl.Status</div>
+                }
+                else
+                {
+                    <span class="text-muted">هنوز Crawl ثبت نشده</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4" id="dashboard-grid-visibility">
+    <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center" dir="rtl">
+        <span>وضعیت Gridها</span>
+        <span class="small text-muted">Grid Number / Status / Last Crawl Time / POI Count / Coverage Score</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height:360px">
+            <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Grid Number</th>
+                        <th>Status</th>
+                        <th>Last Crawl Time</th>
+                        <th>POI Count</th>
+                        <th>Coverage Score</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboard-grid-rows">
+                    @foreach (var grid in Model.DashboardGrids)
+                    {
+                        <tr>
+                            <td>@(grid.GridNumber?.ToString() ?? "—")</td>
+                            <td>@grid.Status</td>
+                            <td>@(grid.LastCrawlTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</td>
+                            <td>@grid.PoiCount.ToString("N0")</td>
+                            <td>@grid.CoverageScore.ToString("N3")</td>
+                        </tr>
+                    }
+                    @if (!Model.DashboardGrids.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No grid rows available.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

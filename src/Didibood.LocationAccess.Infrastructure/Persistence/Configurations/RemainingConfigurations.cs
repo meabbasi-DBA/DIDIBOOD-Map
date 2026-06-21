@@ -12,6 +12,8 @@ public sealed class H3CoverageCellConfiguration : IEntityTypeConfiguration<H3Cov
         builder.ToTable("h3_coverage_cells");
         builder.HasKey(x => x.H3Index);
         builder.Property(x => x.H3Index).HasColumnName("h3_index");
+        builder.Property(x => x.GridNumber).HasColumnName("grid_number");
+        builder.HasIndex(x => x.GridNumber).IsUnique().HasFilter("grid_number IS NOT NULL");
         builder.Property(x => x.Resolution).HasColumnName("resolution");
         builder.Property(x => x.ParentH3Index).HasColumnName("parent_h3_index");
         builder.Property(x => x.IsRefined).HasColumnName("is_refined");
@@ -29,8 +31,19 @@ public sealed class H3CoverageCellConfiguration : IEntityTypeConfiguration<H3Cov
         builder.Property(x => x.RequestCount).HasColumnName("request_count");
         builder.Property(x => x.FailureCount).HasColumnName("failure_count");
         builder.Property(x => x.FailureReason).HasColumnName("failure_reason");
+        builder.Property(x => x.CrawlAttemptCount).HasColumnName("crawl_attempt_count");
+        builder.Property(x => x.CrawlSuccessCount).HasColumnName("crawl_success_count");
+        builder.Property(x => x.LastCrawlStatus).HasColumnName("last_crawl_status").HasMaxLength(20);
+        builder.Property(x => x.LastCrawlDurationMs).HasColumnName("last_crawl_duration_ms");
+        builder.Property(x => x.LastError).HasColumnName("last_error");
+        builder.Property(x => x.NextEligibleCrawlAt).HasColumnName("next_eligible_crawl_at");
+        builder.Property(x => x.CoverageScore).HasColumnName("coverage_score");
+        builder.Property(x => x.CrawlLockOwner).HasColumnName("crawl_lock_owner").HasMaxLength(100);
+        builder.Property(x => x.CrawlLockExpiresAt).HasColumnName("crawl_lock_expires_at");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+        builder.HasIndex(x => new { x.Status, x.NextEligibleCrawlAt });
+        builder.HasIndex(x => new { x.CrawlLockOwner, x.CrawlLockExpiresAt });
     }
 }
 
@@ -119,5 +132,57 @@ public sealed class StaticMapSnapshotConfiguration : IEntityTypeConfiguration<St
         builder.HasIndex(x => x.CacheKey).IsUnique();
         builder.Property(x => x.ImageData).HasColumnName("image_data").HasColumnType("bytea");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+    }
+}
+
+public sealed class CrawlHistoryConfiguration : IEntityTypeConfiguration<CrawlHistory>
+{
+    public void Configure(EntityTypeBuilder<CrawlHistory> builder)
+    {
+        builder.ToTable("crawl_history");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.ExecutionId).HasColumnName("execution_id");
+        builder.Property(x => x.Source).HasColumnName("source").HasMaxLength(50);
+        builder.Property(x => x.GridNumber).HasColumnName("grid_number");
+        builder.Property(x => x.H3Index).HasColumnName("h3_index");
+        builder.Property(x => x.CategoryId).HasColumnName("category_id");
+        builder.Property(x => x.SearchTerm).HasColumnName("search_term").HasMaxLength(200);
+        builder.Property(x => x.Timestamp).HasColumnName("timestamp");
+        builder.Property(x => x.DurationMs).HasColumnName("duration_ms");
+        builder.Property(x => x.Status).HasColumnName("status").HasMaxLength(20);
+        builder.Property(x => x.Reason).HasColumnName("reason");
+        builder.Property(x => x.ResultCount).HasColumnName("result_count");
+        builder.Property(x => x.ErrorMessage).HasColumnName("error_message");
+        builder.HasIndex(x => x.Timestamp);
+        builder.HasIndex(x => x.GridNumber);
+        builder.HasIndex(x => x.Status);
+    }
+}
+
+public sealed class NeshanUsageLedgerConfiguration : IEntityTypeConfiguration<NeshanUsageLedger>
+{
+    public void Configure(EntityTypeBuilder<NeshanUsageLedger> builder)
+    {
+        builder.ToTable("neshan_usage_ledger");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.ExecutionId).HasColumnName("execution_id");
+        builder.Property(x => x.Source).HasColumnName("source").HasMaxLength(50);
+        builder.Property(x => x.Endpoint).HasColumnName("endpoint").HasMaxLength(50);
+        builder.Property(x => x.GridNumber).HasColumnName("grid_number");
+        builder.Property(x => x.H3Index).HasColumnName("h3_index");
+        builder.Property(x => x.CategoryId).HasColumnName("category_id");
+        builder.Property(x => x.SearchTerm).HasColumnName("search_term").HasMaxLength(200);
+        builder.Property(x => x.Timestamp).HasColumnName("timestamp");
+        builder.Property(x => x.Accepted).HasColumnName("accepted");
+        builder.Property(x => x.Reason).HasColumnName("reason").HasMaxLength(200);
+        builder.Property(x => x.CostUnits).HasColumnName("cost_units");
+        builder.Property(x => x.DurationMs).HasColumnName("duration_ms");
+        builder.Property(x => x.HttpStatus).HasColumnName("http_status");
+        builder.Property(x => x.ErrorMessage).HasColumnName("error_message");
+        builder.HasIndex(x => x.Timestamp);
+        builder.HasIndex(x => new { x.Accepted, x.Timestamp });
+        builder.HasIndex(x => x.GridNumber);
     }
 }

@@ -2,6 +2,8 @@ using Didibood.LocationAccess.Application.Abstractions;
 using Didibood.LocationAccess.Application.Crawler;
 using Didibood.LocationAccess.Domain.Entities;
 using Didibood.LocationAccess.Domain.Exceptions;
+using Didibood.LocationAccess.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +14,7 @@ public sealed class CrawlExecutionRunner(
     IServiceScopeFactory scopeFactory,
     ISystemConfigurationStore configStore,
     ICrawlLiveTelemetry liveTelemetry,
+    ICrawlPolicyGate policyGate,
     ILogger<CrawlExecutionRunner> logger) : ICrawlExecutionRunner
 {
     private const int ProgressFlushInterval = 1;
@@ -78,12 +81,12 @@ public sealed class CrawlExecutionRunner(
     {
         var cells = await planner.PlanAsync(plan, ct);
         var summary = new CrawlExecutionSummary();
-        var effectiveParallelism = Math.Max(1, maxParallelism);
+        var effectiveParallelism = 1;
         var totalTasks = cells.Count;
         var tasksCompleted = 0;
 
         logger.LogInformation(
-            "Crawl plan for job {JobId} execution {ExecutionId}: {TaskCount} tasks, parallelism={Parallelism}",
+            "Crawl plan for job {JobId} execution {ExecutionId}: {TaskCount} tasks, policy-gated parallelism={Parallelism}",
             jobId,
             executionId,
             cells.Count,
@@ -96,6 +99,7 @@ public sealed class CrawlExecutionRunner(
             return summary;
         }
 
+        liveTelemetry.SetQueuedCells(executionId, cells.Select(c => c.H3Index).ToArray());
         await FlushProgressAsync(executionId, summary, totalTasks, ct);
 
         using var semaphore = new SemaphoreSlim(effectiveParallelism, effectiveParallelism);
@@ -103,6 +107,8 @@ public sealed class CrawlExecutionRunner(
         var tasks = cells.Select(async cell =>
         {
             await semaphore.WaitAsync(ct);
+            CrawlGateLease? gate = null;
+            DateTimeOffset? taskStarted = null;
             try
             {
                 await EnsureRunningAsync(executionId, ct);
@@ -110,7 +116,34 @@ public sealed class CrawlExecutionRunner(
                 using var scope = scopeFactory.CreateScope();
                 var executor = scope.ServiceProvider.GetRequiredService<ICrawlExecutor>();
                 var h3Coverage = scope.ServiceProvider.GetRequiredService<IH3CoverageRepository>();
+                var source = await ResolveExecutionSourceAsync(executionId, ct);
+                gate = await policyGate.TryAcquireAsync(executionId, source, cell, ct);
+                if (!gate.Accepted)
+                {
+                    logger.LogInformation(
+                        "Crawl task rejected by policy: source={Source}, grid={GridNumber}, h3={H3Index}, reason={Reason}",
+                        gate.Source,
+                        gate.GridNumber,
+                        gate.H3Index,
+                        gate.Reason);
 
+                    var shouldFlushRejected = false;
+                    lock (summary)
+                    {
+                        summary.CellsFailed++;
+                        summary.LastLiveError = gate.Reason;
+                        tasksCompleted++;
+                        shouldFlushRejected = true;
+                    }
+
+                    if (shouldFlushRejected)
+                        await FlushProgressAsync(executionId, summary, totalTasks, ct);
+
+                    return;
+                }
+
+                liveTelemetry.SetCurrentCell(executionId, cell.H3Index, cell.CategoryId, cell.SearchTerm);
+                taskStarted = DateTimeOffset.UtcNow;
                 var result = await executor.ExecuteAsync(cell, ct);
 
                 await h3Coverage.RecordCrawlOutcomeAsync(
@@ -122,6 +155,12 @@ public sealed class CrawlExecutionRunner(
                     result.Error,
                     ct);
 
+                liveTelemetry.RecordCellResult(executionId, cell.H3Index, result.Error is null, result.Error);
+                await policyGate.RecordResultAsync(
+                    gate,
+                    result,
+                    (long)(DateTimeOffset.UtcNow - taskStarted.Value).TotalMilliseconds,
+                    ct);
                 var shouldFlush = false;
                 lock (summary)
                 {
@@ -151,6 +190,15 @@ public sealed class CrawlExecutionRunner(
             }
             catch (NeshanQuotaExceededException ex)
             {
+                liveTelemetry.RecordCellResult(executionId, cell.H3Index, succeeded: false, ex.Message);
+                if (gate is { Accepted: true })
+                {
+                    await SafeRecordPolicyFailureAsync(
+                        gate,
+                        new CrawlExecutionResult(0, 0, 0, 1, ex.Message),
+                        taskStarted,
+                        CancellationToken.None);
+                }
                 var shouldFlush = false;
                 lock (summary)
                 {
@@ -167,6 +215,15 @@ public sealed class CrawlExecutionRunner(
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Cell H3={H3Index} failed during job {JobId}", cell.H3Index, jobId);
+                liveTelemetry.RecordCellResult(executionId, cell.H3Index, succeeded: false, ex.Message);
+                if (gate is { Accepted: true })
+                {
+                    await SafeRecordPolicyFailureAsync(
+                        gate,
+                        new CrawlExecutionResult(0, 0, 0, 1, ex.Message),
+                        taskStarted,
+                        CancellationToken.None);
+                }
                 var shouldFlush = false;
                 lock (summary)
                 {
@@ -208,6 +265,40 @@ public sealed class CrawlExecutionRunner(
 
         if (status is "cancelled" or "paused")
             throw new CrawlExecutionStoppedException(status);
+    }
+
+    private async Task<string> ResolveExecutionSourceAsync(Guid executionId, CancellationToken ct)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var triggeredBy = await db.CrawlJobExecutions
+            .AsNoTracking()
+            .Where(e => e.Id == executionId)
+            .Select(e => e.TriggeredBy)
+            .FirstOrDefaultAsync(ct);
+
+        return triggeredBy?.Contains("manual", StringComparison.OrdinalIgnoreCase) == true
+            ? "manual"
+            : "scheduler";
+    }
+
+    private async Task SafeRecordPolicyFailureAsync(
+        CrawlGateLease gate,
+        CrawlExecutionResult result,
+        DateTimeOffset? taskStarted,
+        CancellationToken ct)
+    {
+        try
+        {
+            var durationMs = taskStarted is null
+                ? 0
+                : (long)(DateTimeOffset.UtcNow - taskStarted.Value).TotalMilliseconds;
+            await policyGate.RecordResultAsync(gate, result, durationMs, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to record crawl policy failure for H3={H3Index}", gate.H3Index);
+        }
     }
 
     private async Task FlushProgressAsync(

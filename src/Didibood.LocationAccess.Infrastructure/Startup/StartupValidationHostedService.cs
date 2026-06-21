@@ -43,17 +43,27 @@ public sealed class StartupValidationHostedService(
     private void ValidateNeshanConfiguration()
     {
         var options = neshanOptions.Value;
-        if (string.IsNullOrWhiteSpace(options.ApiKey))
+        var searchKey = options.GetSearchApiKey();
+        if (string.IsNullOrWhiteSpace(searchKey))
         {
-            throw new InvalidOperationException("Neshan:ApiKey is required but was not configured.");
+            logger.LogWarning("Neshan:SearchApiKey is missing; Neshan Search calls will fail safely until it is configured.");
         }
 
         if (string.IsNullOrWhiteSpace(options.LocationApiKey))
-        {
-            logger.LogWarning("Neshan:LocationApiKey is empty; falling back to ApiKey for Search API.");
-        }
+            logger.LogWarning("Neshan:LocationApiKey is empty; location/web map calls will use configured fallback if available.");
 
-        logger.LogInformation("Neshan configuration validated.");
+        if (string.IsNullOrWhiteSpace(options.ReverseGeocodeApiKey))
+            logger.LogWarning("Neshan:ReverseGeocodeApiKey is empty; reverse geocode calls are not enabled.");
+
+        if (string.IsNullOrWhiteSpace(options.RoutingApiKey))
+            logger.LogWarning("Neshan:RoutingApiKey is empty; routing calls are not enabled.");
+
+        logger.LogInformation(
+            "Neshan configuration validated. SearchApiKey={SearchKey}, LocationApiKey={LocationKey}, ReverseGeocodeApiKey={ReverseKey}, RoutingApiKey={RoutingKey}",
+            NeshanOptions.Mask(searchKey),
+            NeshanOptions.Mask(options.GetLocationApiKey()),
+            NeshanOptions.Mask(options.ReverseGeocodeApiKey),
+            NeshanOptions.Mask(options.RoutingApiKey));
     }
 
     private sealed class CountRow

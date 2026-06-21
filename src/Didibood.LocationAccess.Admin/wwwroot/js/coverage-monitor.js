@@ -1,4 +1,8 @@
 (function () {
+    if (window.__coverageMonitorCleanup) {
+        window.__coverageMonitorCleanup();
+    }
+
     const cfg = window.coverageConfig || {};
     const apiBase = (cfg.apiBase || window.location.origin || '').replace(/\/$/, '');
     const tehranBounds = cfg.tehranBounds || {
@@ -9,6 +13,11 @@
     };
     const gridResolution = cfg.gridResolution || 7;
     const boundaryMode = cfg.boundaryMode || 'municipality';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const traceSessionId = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const traceStartedAt = performance.now();
 
     let boundaryLayer;
 
@@ -32,6 +41,60 @@
     let heatmapLayer;
     let mapReady = false;
     let loadSeq = 0;
+    let debugSeq = 0;
+    let currentAbort;
+    const cleanupHandlers = [];
+
+    function trace(eventName, options) {
+        const payload = {
+            sessionId: traceSessionId,
+            eventName,
+            timestamp: new Date().toISOString(),
+            durationMs: Number((performance.now() - traceStartedAt).toFixed(1)),
+            endpoint: options?.endpoint || null,
+            gridNumber: options?.gridNumber || null,
+            h3Index: options?.h3Index || null,
+            status: options?.status || null,
+            details: options?.details || null
+        };
+
+        const body = JSON.stringify(payload);
+        const send = () => fetch('/Coverage?handler=Trace', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': csrfToken
+            },
+            body,
+            keepalive: true
+        }).catch(() => { /* trace must never affect rendering */ });
+
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(send, { timeout: 1000 });
+        } else {
+            window.setTimeout(send, 0);
+        }
+
+        if (window.console?.debug) {
+            console.debug('[coverage-flow]', payload);
+        }
+    }
+
+    window.coverageTraceEvent = trace;
+    trace('page_load_start');
+
+    window.__coverageMonitorCleanup = function () {
+        if (currentAbort) currentAbort.abort();
+        cleanupHandlers.splice(0).forEach(cleanup => cleanup());
+        if (window.coverageTraceEvent === trace) {
+            delete window.coverageTraceEvent;
+        }
+        if (map) {
+            map.off();
+            map.remove();
+            map = null;
+        }
+    };
 
     function tehranLatLngBounds() {
         return L.latLngBounds(
@@ -130,11 +193,23 @@
         });
     }
 
+    function clearLayerGroup(layerGroup) {
+        if (!layerGroup) return;
+        layerGroup.eachLayer(layer => {
+            layer.off();
+            if (layer.unbindTooltip) layer.unbindTooltip();
+            if (layer.unbindPopup) layer.unbindPopup();
+        });
+        layerGroup.clearLayers();
+    }
+
     async function loadBoundary() {
         if (boundaryMode !== 'municipality') return null;
 
         try {
-            const res = await fetch(`${apiBase}/api/coverage/boundary`);
+            const endpoint = `${apiBase}/api/coverage/boundary`;
+            const started = performance.now();
+            const res = await fetch(endpoint);
             if (!res.ok) return null;
             const geoJson = await res.json();
             if (boundaryLayer) {
@@ -149,6 +224,11 @@
                 },
                 interactive: false
             }).addTo(map);
+            trace('boundary_loaded', {
+                endpoint,
+                status: String(res.status),
+                details: `features=${geoJson.features?.length ?? 0};requestMs=${(performance.now() - started).toFixed(1)}`
+            });
             return boundaryLayer;
         } catch (err) {
             console.error('Boundary load failed', err);
@@ -167,30 +247,69 @@
         fitCellBounds();
     }
 
-    async function loadSummary() {
+    async function loadSummary(signal) {
         const el = document.getElementById('coverage-summary');
         if (!el) return;
 
         try {
-            const res = await fetch(`${apiBase}/api/coverage/summary`);
+            const endpoint = `${apiBase}/api/coverage/summary`;
+            const started = performance.now();
+            const res = await fetch(endpoint, { signal });
             if (!res.ok) return;
 
             const s = await res.json();
-            let debugLine = '';
-            try {
-                const dbgRes = await fetch(`${apiBase}/api/coverage/debug`);
-                if (dbgRes.ok) {
-                    const d = await dbgRes.json();
-                    debugLine = `<div class="text-muted">${d.sourceMode} · ${d.baseCells} سلول + ${d.virtualCenters} مرزی · پوشش تخمینی ${d.estimatedCoveragePercent}%</div>`;
-                }
-            } catch (_) { /* optional */ }
             el.innerHTML = `
                 <div><strong>${s.coveragePercent}%</strong> پوشش موفق</div>
                 <div>${s.successCells}/${s.totalCells} سلول — کهنه: ${s.staleCells} — ناموفق: ${s.failedCells}</div>
-                ${debugLine}
+                <div class="text-muted" id="coverage-debug-line">در حال بارگذاری داده تشخیصی…</div>
             `;
+            trace('summary_loaded', {
+                endpoint,
+                status: String(res.status),
+                details: `totalCells=${s.totalCells};successCells=${s.successCells};requestMs=${(performance.now() - started).toFixed(1)}`
+            });
+            return true;
         } catch (err) {
-            console.error('Coverage summary failed', err);
+            if (err.name !== 'AbortError') console.error('Coverage summary failed', err);
+            return false;
+        }
+    }
+
+    async function loadDebugLine(seq, signal) {
+        const el = document.getElementById('coverage-debug-line');
+        if (!el) return;
+
+        try {
+            const endpoint = `${apiBase}/api/coverage/debug`;
+            trace('debug_requested', { endpoint });
+            const started = performance.now();
+            const res = await fetch(endpoint, { signal });
+            if (!res.ok || seq !== debugSeq) return;
+
+            const d = await res.json();
+            if (seq !== debugSeq) return;
+
+            el.textContent = `${d.sourceMode} · ${d.baseCells} سلول + ${d.virtualCenters} مرزی · پوشش تخمینی ${d.estimatedCoveragePercent}%`;
+            trace('debug_completed', {
+                endpoint,
+                status: String(res.status),
+                details: `baseCells=${d.baseCells};virtualCenters=${d.virtualCenters};requestMs=${(performance.now() - started).toFixed(1)}`
+            });
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error('Coverage debug failed', err);
+                if (seq === debugSeq && el) el.textContent = 'داده تشخیصی در دسترس نیست.';
+            }
+        }
+    }
+
+    function scheduleDebugLoad(signal) {
+        const seq = ++debugSeq;
+        const start = () => loadDebugLine(seq, signal);
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(start, { timeout: 2000 });
+        } else {
+            window.setTimeout(start, 0);
         }
     }
 
@@ -256,7 +375,9 @@
         params.set('limit', '5000');
 
         try {
-            const res = await fetch(`${apiBase}/api/coverage/cells?${params}`);
+            const endpoint = `${apiBase}/api/coverage/cells?${params}`;
+            const started = performance.now();
+            const res = await fetch(endpoint);
             if (!res.ok) {
                 console.error('Coverage cells request failed', res.status);
                 return;
@@ -266,15 +387,20 @@
             if (seq !== loadSeq) return;
 
             let features = geoJson.features || [];
+            trace('cells_loaded', {
+                endpoint,
+                status: String(res.status),
+                details: `features=${features.length};requestMs=${(performance.now() - started).toFixed(1)}`
+            });
 
             const minPoi = document.getElementById('filter-min-poi').value;
             if (minPoi && Number(minPoi) > 0) {
                 features = features.filter(f => (f.properties?.poiCount || 0) >= Number(minPoi));
             }
 
-            cellLayer.clearLayers();
-            centroidLayer.clearLayers();
-            heatmapLayer.clearLayers();
+            clearLayerGroup(cellLayer);
+            clearLayerGroup(centroidLayer);
+            clearLayerGroup(heatmapLayer);
 
             if (features.length > 0) {
                 cellLayer.addData({ type: 'FeatureCollection', features });
@@ -291,8 +417,12 @@
             } else {
                 fitMapToBoundaryOrCells();
             }
+            trace('map_rendered', {
+                endpoint,
+                details: `mode=cells;features=${features.length};interactiveNodes=${document.querySelectorAll('#coverage-map .leaflet-interactive').length}`
+            });
         } catch (err) {
-            console.error('Coverage cells failed', err);
+            if (err.name !== 'AbortError') console.error('Coverage cells failed', err);
         }
     }
 
@@ -303,15 +433,22 @@
         const params = buildParams();
 
         try {
-            const res = await fetch(`${apiBase}/api/coverage/heatmap?${params}`);
+            const endpoint = `${apiBase}/api/coverage/heatmap?${params}`;
+            const started = performance.now();
+            const res = await fetch(endpoint);
             if (!res.ok) return;
 
             const points = await res.json();
             if (seq !== loadSeq) return;
+            trace('cells_loaded', {
+                endpoint,
+                status: String(res.status),
+                details: `mode=heatmap;points=${points.length};requestMs=${(performance.now() - started).toFixed(1)}`
+            });
 
-            cellLayer.clearLayers();
-            centroidLayer.clearLayers();
-            heatmapLayer.clearLayers();
+            clearLayerGroup(cellLayer);
+            clearLayerGroup(centroidLayer);
+            clearLayerGroup(heatmapLayer);
 
             const bounds = L.latLngBounds([]);
             points.forEach(p => {
@@ -339,22 +476,35 @@
             } else {
                 setTehranView();
             }
+            trace('map_rendered', {
+                endpoint,
+                details: `mode=heatmap;points=${points.length};interactiveNodes=${document.querySelectorAll('#coverage-map .leaflet-interactive').length}`
+            });
         } catch (err) {
-            console.error('Coverage heatmap failed', err);
+            if (err.name !== 'AbortError') console.error('Coverage heatmap failed', err);
         }
     }
 
     async function reload() {
-        await loadSummary();
+        if (currentAbort) currentAbort.abort();
+        currentAbort = new AbortController();
+        const { signal } = currentAbort;
+        const summaryPromise = loadSummary(signal);
+
         if (!boundaryLayer && boundaryMode === 'municipality') {
             await loadBoundary();
         }
+
         const mode = document.getElementById('view-mode').value;
         if (mode === 'heatmap') {
             await loadHeatmap();
         } else {
             await loadCells();
         }
+
+        summaryPromise.finally(() => {
+            if (!signal.aborted) scheduleDebugLoad(signal);
+        });
     }
 
     async function showCellDetail(h3Index) {
@@ -381,8 +531,14 @@
         map.flyTo([cell.centroidLat, cell.centroidLng], 13, { duration: 0.6 });
     }
 
-    document.getElementById('btn-reload').addEventListener('click', reload);
-    document.getElementById('view-mode').addEventListener('change', reload);
+    function bind(el, eventName, handler) {
+        if (!el) return;
+        el.addEventListener(eventName, handler);
+        cleanupHandlers.push(() => el.removeEventListener(eventName, handler));
+    }
+
+    bind(document.getElementById('btn-reload'), 'click', reload);
+    bind(document.getElementById('view-mode'), 'change', reload);
 
     initMap();
 })();

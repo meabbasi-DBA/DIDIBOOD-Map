@@ -13,6 +13,48 @@
     <span class="badge bg-secondary">@Model.Configs.Count کلید</span>
 </div>
 
+<div class="card mb-4" id="neshan-api-configuration">
+    <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center" dir="rtl">
+        <span><i class="bi bi-key me-1"></i>کلیدهای Neshan API</span>
+        <span class="badge bg-light text-dark border">masked</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            @foreach (var cfg in Model.NeshanConfigs)
+            {
+                <div class="col-lg-6">
+                    <form method="post" asp-page-handler="Save" class="border rounded p-3 h-100" dir="rtl">
+                        <input type="hidden" name="configKey" value="@cfg.ConfigKey" />
+                        <label class="form-label fw-semibold">@cfg.Label</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password"
+                                   class="form-control font-monospace"
+                                   name="configValue"
+                                   placeholder="@(cfg.IsConfigured ? cfg.MaskedValue : "کلید تنظیم نشده")"
+                                   autocomplete="off" />
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-save"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            مقدار فعلی: <code>@cfg.MaskedValue</code>
+                            @if (cfg.UpdatedAt != default)
+                            {
+                                <span> — آخرین تغییر: @cfg.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                                @if (!string.IsNullOrEmpty(cfg.UpdatedBy))
+                                {
+                                    <span> توسط @cfg.UpdatedBy</span>
+                                }
+                            }
+                        </div>
+                        <div class="small text-muted mt-1">@cfg.Description</div>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -45,10 +87,11 @@
                                     }
                                     else
                                     {
-                                        <input type="@(cfg.ConfigKey.Contains("password", StringComparison.OrdinalIgnoreCase) || cfg.ConfigKey.Contains("secret", StringComparison.OrdinalIgnoreCase) ? "password" : "text")"
+                                        <input type="@(IndexModel.IsSecret(cfg) ? "password" : "text")"
                                                class="form-control form-control-sm font-monospace"
                                                name="configValue"
-                                               value="@cfg.ConfigValue" />
+                                               value="@(IndexModel.IsSecret(cfg) ? "" : cfg.ConfigValue)"
+                                               placeholder="@IndexModel.DisplayValue(cfg)" />
                                     }
                                     <button type="submit" class="btn btn-sm btn-primary flex-shrink-0" title="ذخیره این مقدار">
                                         <i class="bi bi-save"></i>

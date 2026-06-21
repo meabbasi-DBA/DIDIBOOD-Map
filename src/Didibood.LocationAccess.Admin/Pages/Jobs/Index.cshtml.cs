@@ -21,6 +21,10 @@ public record ExecutionRow(
     int CellsProcessed,
     int CellsFailed,
     int TotalTasksPlanned,
+    long? CurrentGrid,
+    IReadOnlyList<long> QueuedGrids,
+    IReadOnlyList<long> RecentGrids,
+    IReadOnlyList<long> FailedGrids,
     string? LiveError);
 
 public class IndexModel(AppDbContext db, ICrawlLiveTelemetry liveTelemetry) : PageModel
@@ -86,22 +90,33 @@ public class IndexModel(AppDbContext db, ICrawlLiveTelemetry liveTelemetry) : Pa
         HasActiveCrawl = rows.Any(r => r.Status is "running" or "queued")
             || await db.CrawlJobExecutions.AnyAsync(e => e.Status == "running" || e.Status == "queued", cancellationToken);
 
-        Executions = rows.Select(x => new ExecutionRow(
-            x.Id,
-            x.Name,
-            x.TriggeredBy,
-            x.Status,
-            x.StartedAt,
-            x.EndedAt,
-            x.DurationMs,
-            x.RequestCount,
-            x.NewRecords,
-            x.UpdatedRecords,
-            x.FailedRecords,
-            x.CellsProcessed,
-            x.CellsFailed,
-            x.TotalTasksPlanned,
-            x.Status is "running" or "queued" ? liveTelemetry.GetLiveError(x.Id) : null))
+        Executions = rows.Select(x =>
+        {
+            var live = x.Status is "running" or "queued"
+                ? liveTelemetry.GetSnapshot(x.Id)
+                : new CrawlLiveSnapshot(null, null, [], [], []);
+
+            return new ExecutionRow(
+                x.Id,
+                x.Name,
+                x.TriggeredBy,
+                x.Status,
+                x.StartedAt,
+                x.EndedAt,
+                x.DurationMs,
+                x.RequestCount,
+                x.NewRecords,
+                x.UpdatedRecords,
+                x.FailedRecords,
+                x.CellsProcessed,
+                x.CellsFailed,
+                x.TotalTasksPlanned,
+                live.CurrentCell?.H3Index,
+                live.QueuedCells,
+                live.RecentCells.Select(c => c.H3Index).ToArray(),
+                live.FailedCells.Select(c => c.H3Index).ToArray(),
+                live.Error);
+        })
             .ToList();
     }
 }

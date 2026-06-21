@@ -14,6 +14,7 @@ namespace Didibood.LocationAccess.Infrastructure.Neshan;
 public sealed class NeshanSearchClient(
     HttpClient httpClient,
     IOptions<NeshanOptions> options,
+    ISystemConfigurationStore configStore,
     ILogger<NeshanSearchClient> logger) : INeshanSearchClient
 {
     private const string SearchBaseUrl = "https://api.neshan.org/v1/search";
@@ -32,7 +33,7 @@ public sealed class NeshanSearchClient(
     {
         ValidateSearchInput(term, latitude, longitude);
 
-        var apiKey = options.Value.GetSearchApiKey();
+        var apiKey = await configStore.GetAsync("neshan.SearchApiKey", options.Value.GetSearchApiKey(), cancellationToken);
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new NeshanAuthenticationException("Neshan API key is not configured.", 480);
 

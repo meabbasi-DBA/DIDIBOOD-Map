@@ -35,7 +35,12 @@ internal static class DbSeeder
             db.SystemConfigurations.AddRange(
                 new SystemConfiguration { ConfigKey = "search.radius.default_meters", ConfigValue = "2000", ValueType = "int", Description = "Neshan search disc radius (meters) for overlap planning", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "search.max_results_per_category", ConfigValue = "20", ValueType = "int", Description = "Max POIs per category", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "neshan.SearchApiKey", ConfigValue = "", ValueType = "secret", Description = "Neshan Search API key", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "neshan.LocationApiKey", ConfigValue = "", ValueType = "secret", Description = "Neshan Location / static map API key", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "neshan.ReverseGeocodeApiKey", ConfigValue = "", ValueType = "secret", Description = "Neshan Reverse Geocode API key", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "neshan.RoutingApiKey", ConfigValue = "", ValueType = "secret", Description = "Neshan Routing API key", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.batch_size", ConfigValue = "10", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
+                new SystemConfiguration { ConfigKey = "crawl.maxExecutionsPerHour", ConfigValue = "5", ValueType = "int", Description = "Hard global Neshan crawl execution limit per rolling hour", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.parallelism", ConfigValue = "2", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.retry.count", ConfigValue = "3", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
                 new SystemConfiguration { ConfigKey = "crawl.retry.delay_ms", ConfigValue = "2000", ValueType = "int", UpdatedAt = now, UpdatedBy = "system" },
@@ -52,6 +57,16 @@ internal static class DbSeeder
             "H3 crawl resolution: auto (coarsest overlap-safe) or 6-8", cancellationToken);
         await EnsureSystemConfigurationAsync(db, "crawl.h3_reseed_on_startup", "false", "bool",
             "Rebuild H3 grid when resolution/cell count differs from plan", cancellationToken);
+        await EnsureSystemConfigurationAsync(db, "crawl.maxExecutionsPerHour", "5", "int",
+            "Hard global Neshan crawl execution limit per rolling hour", cancellationToken);
+        await EnsureSystemConfigurationAsync(db, "neshan.SearchApiKey", "", "secret",
+            "Neshan Search API key", cancellationToken);
+        await EnsureSystemConfigurationAsync(db, "neshan.LocationApiKey", "", "secret",
+            "Neshan Location / static map API key", cancellationToken);
+        await EnsureSystemConfigurationAsync(db, "neshan.ReverseGeocodeApiKey", "", "secret",
+            "Neshan Reverse Geocode API key", cancellationToken);
+        await EnsureSystemConfigurationAsync(db, "neshan.RoutingApiKey", "", "secret",
+            "Neshan Routing API key", cancellationToken);
         await EnsureSystemConfigurationAsync(db, H3BoundaryRefinementPlanner.RefinementConfigKey, "true", "bool",
             "Enable virtual sub-centroids inside municipality boundary H3 cells", cancellationToken);
 

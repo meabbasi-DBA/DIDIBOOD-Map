@@ -10,6 +10,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<H3CoverageCell> H3CoverageCells => Set<H3CoverageCell>();
     public DbSet<CrawlJob> CrawlJobs => Set<CrawlJob>();
     public DbSet<CrawlJobExecution> CrawlJobExecutions => Set<CrawlJobExecution>();
+    public DbSet<CrawlHistory> CrawlHistory => Set<CrawlHistory>();
+    public DbSet<NeshanUsageLedger> NeshanUsageLedger => Set<NeshanUsageLedger>();
     public DbSet<SystemConfiguration> SystemConfigurations => Set<SystemConfiguration>();
     public DbSet<StaticMapSnapshot> StaticMapSnapshots => Set<StaticMapSnapshot>();
 

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Didibood.LocationAccess.Application.Configuration;
 using Didibood.LocationAccess.Domain.Entities;
 using Didibood.LocationAccess.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +13,8 @@ namespace Didibood.LocationAccess.Admin.Pages.Coverage;
 public class IndexModel(
     AppDbContext db,
     IConfiguration config,
-    IOptions<NeshanOptions> neshanOptions) : PageModel
+    IOptions<NeshanOptions> neshanOptions,
+    ILogger<IndexModel> logger) : PageModel
 {
     private static readonly TehranBoundsBox Defaults = new(35.50, 35.88, 51.10, 51.62);
 
@@ -42,6 +44,23 @@ public class IndexModel(
             .Where(c => c.IsEnabled)
             .OrderBy(c => c.DisplayOrder)
             .ToListAsync(cancellationToken);
+    }
+
+    public IActionResult OnPostTrace([FromBody] CoverageTraceEvent trace)
+    {
+        logger.LogInformation(
+            "Coverage flow trace: session={SessionId} event={EventName} timestamp={Timestamp:o} durationMs={DurationMs} endpoint={Endpoint} gridNumber={GridNumber} h3Index={H3Index} status={Status} details={Details}",
+            trace.SessionId,
+            trace.EventName,
+            trace.Timestamp,
+            trace.DurationMs,
+            trace.Endpoint,
+            trace.GridNumber,
+            trace.H3Index,
+            trace.Status,
+            trace.Details);
+
+        return new JsonResult(new { ok = true });
     }
 
     private async Task<string> LoadBoundaryModeAsync(CancellationToken ct)
@@ -106,6 +125,17 @@ public class IndexModel(
     }
 
     public sealed record TehranBoundsBox(double MinLat, double MaxLat, double MinLng, double MaxLng);
+
+    public sealed record CoverageTraceEvent(
+        string SessionId,
+        string EventName,
+        DateTimeOffset Timestamp,
+        double DurationMs,
+        string? Endpoint,
+        int? GridNumber,
+        long? H3Index,
+        string? Status,
+        string? Details);
 
     private sealed class TehranBoundsDto
     {

@@ -77,6 +77,23 @@ public class IndexModel(AppDbContext db, ICrawlLiveTelemetry liveTelemetry) : Pa
                 return RedirectToPage();
             }
 
+            var cutoff = DateTimeOffset.UtcNow.AddHours(-1);
+            var usedThisHour = await db.NeshanUsageLedger
+                .AsNoTracking()
+                .Where(x => x.Accepted && x.Timestamp >= cutoff)
+                .SumAsync(x => (int?)x.CostUnits, cancellationToken) ?? 0;
+            var limitRaw = await db.SystemConfigurations
+                .AsNoTracking()
+                .Where(c => c.ConfigKey == "crawl.maxExecutionsPerHour")
+                .Select(c => c.ConfigValue)
+                .FirstOrDefaultAsync(cancellationToken);
+            var limit = int.TryParse(limitRaw, out var parsedLimit) && parsedLimit > 0 ? parsedLimit : 5;
+            if (usedThisHour >= limit)
+            {
+                TempData["Error"] = "سقف درخواست Neshan برای این ساعت پر شده است.";
+                return RedirectToPage();
+            }
+
             var triggeredBy = CrawlMode switch
             {
                 "categories" => $"admin_manual:categories:{string.Join(',', SelectedCategories.OrderBy(x => x))}",

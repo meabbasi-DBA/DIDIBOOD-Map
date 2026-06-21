@@ -15,6 +15,7 @@ namespace Didibood.LocationAccess.Infrastructure.Neshan;
 public sealed class NeshanStaticMapService(
     HttpClient httpClient,
     IOptions<NeshanOptions> options,
+    ISystemConfigurationStore configStore,
     Persistence.AppDbContext db,
     IMemoryCache cache,
     ILogger<NeshanStaticMapService> logger) : IStaticMapProvider
@@ -114,9 +115,9 @@ public sealed class NeshanStaticMapService(
 
     private async Task<byte[]> FetchFromNeshanAsync(StaticMapRequest request, CancellationToken ct)
     {
-        var apiKey = options.Value.ApiKey;
+        var apiKey = await configStore.GetAsync("neshan.LocationApiKey", options.Value.GetLocationApiKey(), ct);
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new NeshanAuthenticationException("Neshan API key is not configured.", 480);
+            throw new NeshanAuthenticationException("Neshan Location API key is not configured.", 480);
 
         var url = BuildUrl(request, apiKey);
 

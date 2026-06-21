@@ -22,8 +22,8 @@ public sealed class CrawlPlanner(AppDbContext db) : ICrawlPlanner
             cellQuery = cellQuery.Where(c => c.Status == "stale" || c.Status == "failed");
         }
 
-        // Load cells with tracking so shadow property Centroid is accessible.
-        var cells = await cellQuery.ToListAsync(ct);
+        // Load eligible cells with tracking so shadow property Centroid is accessible.
+        var cells = RandomizeEligible(await cellQuery.ToListAsync(ct));
 
         // Query enabled categories, optionally filtered by ID list.
         var categoryQuery = db.PoiCategories
@@ -64,5 +64,15 @@ public sealed class CrawlPlanner(AppDbContext db) : ICrawlPlanner
         }
 
         return result;
+    }
+
+    private static List<Domain.Entities.H3CoverageCell> RandomizeEligible(List<Domain.Entities.H3CoverageCell> cells)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return cells
+            .Where(c => c.CrawlLockExpiresAt is null || c.CrawlLockExpiresAt <= now)
+            .Where(c => c.NextEligibleCrawlAt is null || c.NextEligibleCrawlAt <= now)
+            .OrderBy(_ => Guid.NewGuid())
+            .ToList();
     }
 }

@@ -25,13 +25,21 @@ public class JobsPartialModel(AppDbContext db, ICrawlLiveTelemetry liveTelemetry
             })
             .ToListAsync(cancellationToken);
 
-        Executions = rows.Select(x => new ExecutionRow(
-            x.Id, x.Name, x.TriggeredBy, x.Status,
-            x.StartedAt, x.EndedAt, x.DurationMs,
-            x.RequestCount, x.NewRecords, x.UpdatedRecords,
-            x.FailedRecords, x.CellsProcessed, x.CellsFailed,
-            x.TotalTasksPlanned,
-            liveTelemetry.GetLiveError(x.Id)))
+        Executions = rows.Select(x =>
+        {
+            var live = liveTelemetry.GetSnapshot(x.Id);
+            return new ExecutionRow(
+                x.Id, x.Name, x.TriggeredBy, x.Status,
+                x.StartedAt, x.EndedAt, x.DurationMs,
+                x.RequestCount, x.NewRecords, x.UpdatedRecords,
+                x.FailedRecords, x.CellsProcessed, x.CellsFailed,
+                x.TotalTasksPlanned,
+                live.CurrentCell?.H3Index,
+                live.QueuedCells,
+                live.RecentCells.Select(c => c.H3Index).ToArray(),
+                live.FailedCells.Select(c => c.H3Index).ToArray(),
+                live.Error);
+        })
             .ToList();
     }
 }

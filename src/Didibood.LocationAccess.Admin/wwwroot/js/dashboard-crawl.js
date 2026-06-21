@@ -1,6 +1,13 @@
 (function () {
-    const pollMs = 3000;
+    if (window.__dashboardCrawlCleanup) {
+        window.__dashboardCrawlCleanup();
+    }
+
+    const dashboardPollMs = 3000;
+    const badgeOnlyPollMs = 15000;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    let pollTimer;
+    let isRefreshing = false;
 
     const els = {
         badge: document.getElementById('crawl-status-badge'),
@@ -23,6 +30,17 @@
         message: document.getElementById('crawl-message'),
         runningJobs: document.getElementById('stat-running-jobs'),
         h3Success: document.getElementById('stat-h3-success'),
+        h3Crawled: document.getElementById('stat-h3-crawled'),
+        h3Remaining: document.getElementById('stat-h3-remaining'),
+        h3SuccessRate: document.getElementById('stat-h3-success-rate'),
+        schedulerState: document.getElementById('crawl-scheduler-state'),
+        apiUsed: document.getElementById('crawl-api-used'),
+        apiRemaining: document.getElementById('crawl-api-remaining'),
+        currentGrid: document.getElementById('crawl-current-grid'),
+        currentGridDetail: document.getElementById('crawl-current-grid-detail'),
+        nextGrids: document.getElementById('crawl-next-grids'),
+        lastTimeline: document.getElementById('crawl-last-timeline'),
+        gridRows: document.getElementById('dashboard-grid-rows'),
         workerBadge: document.getElementById('worker-status-badge'),
         btnStart: document.getElementById('btn-crawl-start'),
         btnPause: document.getElementById('btn-crawl-pause'),
@@ -33,6 +51,16 @@
     const hasDashboard = Boolean(els.btnStart);
     const hasTopBadge = Boolean(els.topBadge);
     if (!hasDashboard && !hasTopBadge) return;
+
+    const pollMs = hasDashboard ? dashboardPollMs : badgeOnlyPollMs;
+
+    window.__dashboardCrawlCleanup = function () {
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
 
     const statusLabels = {
         queued: 'در صف Worker',
@@ -52,13 +80,24 @@
     }
 
     async function refresh() {
+        if (document.hidden || isRefreshing) return;
+        isRefreshing = true;
+        const started = performance.now();
         try {
-            const res = await fetch('/Index?handler=CrawlStatus', { headers: { 'Accept': 'application/json' } });
+            const endpoint = '/Index?handler=CrawlStatus';
+            const res = await fetch(endpoint, { headers: { 'Accept': 'application/json' } });
             if (!res.ok) return;
             const data = await res.json();
             render(data);
+            window.coverageTraceEvent?.('crawl_status_polled', {
+                endpoint,
+                status: String(res.status),
+                details: `requestMs=${(performance.now() - started).toFixed(1)};isActive=${Boolean(data.isActive)};currentGrid=${data.currentGrid ?? ''};queued=${data.queuedGrids?.length ?? 0};remaining=${data.apiCallsRemainingThisHour ?? ''}`
+            });
         } catch (err) {
             console.error('Crawl status poll failed', err);
+        } finally {
+            isRefreshing = false;
         }
     }
 
@@ -71,6 +110,16 @@
 
         if (els.runningJobs) els.runningJobs.textContent = data.runningCount ?? 0;
         if (els.h3Success && data.h3Success != null) els.h3Success.textContent = Number(data.h3Success).toLocaleString();
+        if (els.h3Crawled && data.h3Crawled != null) els.h3Crawled.textContent = Number(data.h3Crawled).toLocaleString();
+        if (els.h3Remaining && data.h3Remaining != null) els.h3Remaining.textContent = Number(data.h3Remaining).toLocaleString();
+        if (els.h3SuccessRate && data.h3SuccessRate != null) els.h3SuccessRate.textContent = `${Number(data.h3SuccessRate).toLocaleString()}%`;
+        if (els.schedulerState) els.schedulerState.textContent = data.schedulerState || 'idle';
+        if (els.apiUsed && data.apiCallsUsedThisHour != null) els.apiUsed.textContent = Number(data.apiCallsUsedThisHour).toLocaleString();
+        if (els.apiRemaining && data.apiCallsRemainingThisHour != null) els.apiRemaining.textContent = Number(data.apiCallsRemainingThisHour).toLocaleString();
+        renderCurrentGrid(data);
+        renderNextGrids(data.nextQueuedGrids || []);
+        renderTimeline(data.lastCrawl);
+        renderGridRows(data.dashboardGrids || []);
         if (els.workerBadge) {
             els.workerBadge.textContent = isRunning ? 'فعال' : (data.pausedCount > 0 ? 'مکث' : (isQueued ? 'در صف' : 'آماده'));
             els.workerBadge.className = 'badge ' + (isRunning ? 'bg-success' : (data.pausedCount > 0 ? 'bg-warning' : (isQueued ? 'bg-info' : 'bg-secondary')));
@@ -150,6 +199,81 @@
         }
     }
 
+    function renderCurrentGrid(data) {
+        if (!els.currentGrid) return;
+
+        if (!data.currentGrid) {
+            els.currentGrid.textContent = '—';
+            if (els.currentGridDetail) els.currentGridDetail.textContent = '';
+            return;
+        }
+
+        const gridNumber = data.currentGridNumber ? `#${data.currentGridNumber}` : '—';
+        els.currentGrid.textContent = gridNumber;
+        if (els.currentGridDetail) {
+            const parts = [
+                `H3 ${data.currentGrid}`,
+                data.currentGridCategoryId ? `category ${data.currentGridCategoryId}` : '',
+                data.currentGridSearchTerm || ''
+            ].filter(Boolean);
+            els.currentGridDetail.textContent = parts.join(' — ');
+        }
+    }
+
+    function renderNextGrids(rows) {
+        if (!els.nextGrids) return;
+        if (!rows.length) {
+            els.nextGrids.innerHTML = '<span class="text-muted">هیچ Grid واجدی یافت نشد.</span>';
+            return;
+        }
+
+        els.nextGrids.innerHTML = rows.slice(0, 5).map(row => {
+            const grid = row.gridNumber == null ? '—' : `#${row.gridNumber}`;
+            return `<div>Grid ${grid} — H3 ${row.h3Index} — ${row.priority}</div>`;
+        }).join('');
+    }
+
+    function renderTimeline(row) {
+        if (!els.lastTimeline) return;
+        if (!row) {
+            els.lastTimeline.innerHTML = '<span class="text-muted">هنوز Crawl ثبت نشده</span>';
+            return;
+        }
+
+        const grid = row.gridNumber == null ? '—' : `#${row.gridNumber}`;
+        const timestamp = row.timestamp ? new Date(row.timestamp).toLocaleString('fa-IR') : '—';
+        const duration = row.durationMs == null ? '—' : `${Number(row.durationMs).toLocaleString()} ms`;
+        els.lastTimeline.innerHTML = [
+            `<div>Last Crawled Grid Number: ${grid} — H3 ${row.h3Index}</div>`,
+            `<div>Last Crawled Datetime: ${timestamp}</div>`,
+            `<div>Duration: ${duration}</div>`,
+            `<div>Status: ${row.status || '—'}</div>`
+        ].join('');
+    }
+
+    function renderGridRows(rows) {
+        if (!els.gridRows) return;
+        if (!rows.length) {
+            els.gridRows.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No grid rows available.</td></tr>';
+            return;
+        }
+
+        els.gridRows.innerHTML = rows.map(row => {
+            const grid = row.gridNumber == null ? '—' : row.gridNumber;
+            const last = row.lastCrawlTime ? new Date(row.lastCrawlTime).toLocaleString('fa-IR') : '—';
+            const score = row.coverageScore == null ? '0.000' : Number(row.coverageScore).toFixed(3);
+            return [
+                '<tr>',
+                `<td>${grid}</td>`,
+                `<td>${row.status || 'Never Crawled'}</td>`,
+                `<td>${last}</td>`,
+                `<td>${Number(row.poiCount || 0).toLocaleString()}</td>`,
+                `<td>${score}</td>`,
+                '</tr>'
+            ].join('');
+        }).join('');
+    }
+
     function updateBadge(el, data) {
         if (!el) return;
         const status = data.status || '';
@@ -195,6 +319,11 @@
         await refresh();
     });
 
+    function handleVisibilityChange() {
+        if (!document.hidden) void refresh();
+    }
+
     refresh();
-    setInterval(refresh, pollMs);
+    pollTimer = setInterval(refresh, pollMs);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 })();

@@ -16,6 +16,7 @@
                 <th class="text-center text-warning">بروز</th>
                 <th class="text-center text-danger">خطا</th>
                 <th class="text-center">سلول‌ها</th>
+                <th>جریان Grid</th>
             </tr>
         </thead>
         <tbody>
@@ -89,12 +90,34 @@
                             <span>@row.CellsProcessed.ToString("N0")</span>
                         }
                     </td>
+                    <td class="small">
+                        @if (row.CurrentGrid.HasValue)
+                        {
+                            <div><strong>در حال پردازش:</strong> @row.CurrentGrid.Value</div>
+                        }
+                        @if (row.QueuedGrids.Count > 0)
+                        {
+                            <div class="text-muted">صف: @string.Join(", ", row.QueuedGrids.Take(5))@(row.QueuedGrids.Count > 5 ? "…" : "")</div>
+                        }
+                        @if (row.RecentGrids.Count > 0)
+                        {
+                            <div class="text-success">اخیر: @string.Join(", ", row.RecentGrids.Take(3))</div>
+                        }
+                        @if (row.FailedGrids.Count > 0)
+                        {
+                            <div class="text-danger">ناموفق: @string.Join(", ", row.FailedGrids.Take(3))</div>
+                        }
+                        @if (!row.CurrentGrid.HasValue && row.QueuedGrids.Count == 0 && row.RecentGrids.Count == 0 && row.FailedGrids.Count == 0)
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
                 </tr>
             }
             @if (!Model.Executions.Any())
             {
                 <tr>
-                    <td colspan="10" class="text-center text-muted py-5" dir="rtl">
+                    <td colspan="11" class="text-center text-muted py-5" dir="rtl">
                         <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                         هیچ اجرایی ثبت نشده
                         @if (!string.IsNullOrEmpty(Model.StatusFilter))
