@@ -1,9 +1,13 @@
+using Didibood.LocationAccess.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Didibood.LocationAccess.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(AppDbContext))]
+[Migration("20260621120000_CrawlGovernanceAndMonitoring")]
 public partial class CrawlGovernanceAndMonitoring : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
